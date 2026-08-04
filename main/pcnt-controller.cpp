@@ -1,7 +1,12 @@
 #include "pcnt-controller.h"
 #include "driver/gpio.h"
+#include "gpio-controller.h"
 PcntController::PcntController(uint8_t pinA, uint8_t pinB) : _pinA(pinA), _pinB(pinB), _pcnt_unit(nullptr), _pcnt_channel(nullptr)
 {
+    // ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinB), GPIO_PULLDOWN_ONLY));
+    // ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinA), GPIO_PULLDOWN_ONLY));
+    GpioController::setDirection(pinA, GpioController::DIRECTION::INPUT);
+    GpioController::setDirection(pinB, GpioController::DIRECTION::INPUT);
     pcnt_unit_config_t unit_config = {};
 
         unit_config.low_limit = -30000;
@@ -35,8 +40,8 @@ PcntController::PcntController(uint8_t pinA, uint8_t pinB) : _pinA(pinA), _pinB(
     ESP_ERROR_CHECK(pcnt_unit_clear_count(_pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_start(_pcnt_unit));
 
-    ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinA), GPIO_PULLDOWN_ONLY));
-    ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinB), GPIO_PULLDOWN_ONLY));
+    // ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinA), GPIO_PULLDOWN_ONLY));
+    //  ESP_ERROR_CHECK(gpio_set_pull_mode(static_cast<gpio_num_t>(_pinB), GPIO_PULLDOWN_ONLY));
 }
 
 

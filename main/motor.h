@@ -14,7 +14,7 @@ class Motor
     PcntController& pcntController();
     double& rpm();
     int64_t& previous_time_us();
-    
+    int encoder_a_pin() const;
     
     private:
     static void update_rpm_task_A(void*);

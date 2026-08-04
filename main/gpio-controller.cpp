@@ -10,7 +10,7 @@ void GpioController::setDirection(uint8_t pin, GpioController::DIRECTION DIRECTI
     ESP_ERROR_CHECK(gpio_set_direction(gpioPin, direction));
 }
 
-void GpioController::state(uint8_t pin, GpioController::STATE MODE)
+void GpioController::setState(uint8_t pin, GpioController::STATE MODE)
 {
     gpio_num_t gpioPin;
     gpioPin = pinNumber(pin);

@@ -75,4 +75,22 @@ menu "Robot configuration"
             default 23
     endmenu
 
+    menu "Buzzer"
+        config BUZZER_GPIO
+            int"BUZZER_GPIO"
+            default 8
+    endmenu
+
+    menu "Button"
+        config BUTTON_GPIO
+            int "BUTTON_GPIO"
+            default 5
+    endmenu
+
+    menu "Voltage"
+        config VOLTAGE_GPIO
+            int"VOLTAGE_GPIO"
+            default 4
+    endmenu
+
 endmenu

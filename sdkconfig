@@ -657,6 +657,24 @@ CONFIG_MOTOR2_DIR_GPIO=6
 CONFIG_MOTOR2_ENCODER_A_YELLOW=22
 CONFIG_MOTOR2_ENCODER_B_WHITE=23
 # end of Motor 2
+
+#
+# Buzzer
+#
+CONFIG_BUZZER_GPIO=8
+# end of Buzzer
+
+#
+# Button
+#
+CONFIG_BUTTON_GPIO=5
+# end of Button
+
+#
+# Voltage
+#
+CONFIG_VOLTAGE_GPIO=4
+# end of Voltage
 # end of Robot configuration
 
 #

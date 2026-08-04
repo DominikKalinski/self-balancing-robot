@@ -12,10 +12,10 @@ Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO,
         CONFIG_MOTOR2_ENCODER_B_WHITE,
         PwmController::CHANNEL::CHANNEL1)
 {       
-       
+       _button.run_task();
 }
 
-void Robot::set_motor_pwm(Motor motor, uint8_t percentage)
+void Robot::set_motor_pwm(Motor& motor, uint8_t percentage)
 {
     motor.set_pwm(percentage);
 }

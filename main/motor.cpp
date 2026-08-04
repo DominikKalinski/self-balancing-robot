@@ -13,10 +13,11 @@ _rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _prev
 {
     GpioController::setDirection(_dir_pin, GpioController::DIRECTION::OUTPUT);
     GpioController::setDirection(_pwm_pin, GpioController::DIRECTION::OUTPUT);
-    GpioController::setDirection(_encoder_A_pin, GpioController::DIRECTION::INPUT);
-    GpioController::setDirection(_encoder_B_pin, GpioController::DIRECTION::INPUT);
-    GpioController::state(_dir_pin, GpioController::STATE::HIGH);
-     _pwmController.pwm_pin_init(_pwm_pin, _channel);
+    // GpioController::setDirection(_encoder_A_pin, GpioController::DIRECTION::INPUT);
+    // GpioController::setDirection(_encoder_B_pin, GpioController::DIRECTION::INPUT);
+    GpioController::setState(_dir_pin, GpioController::STATE::LOW);
+    GpioController::setState(_pwm_pin, GpioController::STATE::LOW);
+     //_pwmController.pwm_pin_init(_pwm_pin, _channel);
 }
 
 
@@ -26,18 +27,18 @@ void Motor::switch_dir()
     _forward = !_forward;
     if(_forward)
     {
-        GpioController::state(_dir_pin, GpioController::STATE::HIGH);
+        GpioController::setState(_dir_pin, GpioController::STATE::HIGH);
     }
     else
     {
-        GpioController::state(_dir_pin, GpioController::STATE::LOW);
+        GpioController::setState(_dir_pin, GpioController::STATE::LOW);
     }
     
 }
 
 void Motor::set_pwm(uint8_t pwm_percentage)
 {
-    _pwmController.pwm_set(pwm_percentage, _channel);
+    //_pwmController.pwm_set(pwm_percentage, _channel);
 }
 
 uint8_t Motor::pwm_pin()
@@ -65,19 +66,27 @@ int64_t& Motor::previous_time_us()
     return _previous_time_us;
 }
 
+int Motor::encoder_a_pin() const
+{
+    return static_cast<int>(_encoder_A_pin);
+}
+
 //PRIVATE       //PRIVATE       //PRIVATE       //PRIVATE       //PRIVATE
 void Motor::update_rpm_task_A(void* parameter)
 {
     Motor* motor = static_cast<Motor*>(parameter);
     while(true)
     {
+        printf("Encoder Pin: %d\n", motor->encoder_a_pin());
         int current_pulses = motor->pcntController().get_pulses();
         int64_t current_time_us = esp_timer_get_time();
-        int difference_us = static_cast<int>(current_time_us - motor->previous_time_us());
+        int64_t difference_us = current_time_us - motor->previous_time_us();
         motor->rpm() = (static_cast<double>(current_pulses) / (static_cast<double>(difference_us) / 60000000)) / 16;
         motor->previous_time_us() = current_time_us;
+        printf("Pulses: %d\n\n", motor->pcntController().get_pulses());
         motor->pcntController().clear_pulses();
-        vTaskDelay(pdMS_TO_TICKS(10));
+        vTaskDelay(pdMS_TO_TICKS(100));
+        
     }
 }
 

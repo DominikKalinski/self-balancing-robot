@@ -3,7 +3,7 @@
 #include "macros.h"
 static const char *TAG = "mpu6050_test";
 
-ImuSensor::ImuSensor() : _dev{  }
+ImuSensor::ImuSensor() : _dev{  }, _buzzer(), _average_acceleration_y_axis(0), _average_rotation_y_axis(0)
 {
 
 }
@@ -61,7 +61,25 @@ void ImuSensor::start_test()
 }
 
 
-
+void ImuSensor::calibrate()
+{
+    _buzzer.beep_ms(40);
+    mpu6050_acceleration_t accel;
+    mpu6050_rotation_t rotation;
+    float total_acceleration_y_axis = 0.f;
+    float total_rotation_y_axis = 0.f;
+    for(int i = 0; i < 100; i++)
+    {
+        ESP_ERROR_CHECK(mpu6050_get_motion(&_dev, &accel, &rotation));
+        total_acceleration_y_axis += accel.y;
+        total_rotation_y_axis += rotation.y;
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    _average_acceleration_y_axis = total_acceleration_y_axis / 1000;
+    _average_rotation_y_axis = total_rotation_y_axis / 1000;
+    printf("Average acceleration: %f\n Average Rotation: %f\n", _average_acceleration_y_axis, _average_rotation_y_axis);
+    _buzzer.beep_ms(500);
+}
 
 
 
