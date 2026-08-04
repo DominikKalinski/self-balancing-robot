@@ -9,10 +9,12 @@ class ImuSensor
     void init();
     void start_test();
     void calibrate();
+    SemaphoreHandle_t _imu_mutex = nullptr;
     private:
     mpu6050_dev_t _dev;
     Buzzer _buzzer;
     static void mpu6050_test(void *pvParameters);
     float _average_acceleration_y_axis;
     float _average_rotation_y_axis;
+    TaskHandle_t _task_handle;
 };

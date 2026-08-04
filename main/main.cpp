@@ -9,13 +9,12 @@
 #include "button.h"
 extern "C" void app_main()
 {
-    static ImuSensor sensor;
-    sensor.init();
-    sensor.start_test();
+    // static ImuSensor sensor;
+    // sensor.init();
+    // sensor.start_test();
     Robot robot;
     robot.start_rpm_task();
-    Button button(&robot);
-    button.run_task();
+   
     
     while(true)
     {

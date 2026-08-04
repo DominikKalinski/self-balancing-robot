@@ -14,6 +14,8 @@ Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO,
         _button(this), _imuSensor()
 {       
        _button.run_task();
+       _imuSensor.init();
+       _imuSensor.start_test();
 }
 
 void Robot::set_motor_pwm(Motor& motor, uint8_t percentage)

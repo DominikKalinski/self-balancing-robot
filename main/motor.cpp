@@ -77,13 +77,11 @@ void Motor::update_rpm_task_A(void* parameter)
     Motor* motor = static_cast<Motor*>(parameter);
     while(true)
     {
-        printf("Encoder Pin: %d\n", motor->encoder_a_pin());
         int current_pulses = motor->pcntController().get_pulses();
         int64_t current_time_us = esp_timer_get_time();
         int64_t difference_us = current_time_us - motor->previous_time_us();
         motor->rpm() = (static_cast<double>(current_pulses) / (static_cast<double>(difference_us) / 60000000)) / 16;
         motor->previous_time_us() = current_time_us;
-        printf("Pulses: %d\n\n", motor->pcntController().get_pulses());
         motor->pcntController().clear_pulses();
         vTaskDelay(pdMS_TO_TICKS(100));
         

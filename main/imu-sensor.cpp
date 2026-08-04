@@ -3,14 +3,15 @@
 #include "macros.h"
 static const char *TAG = "mpu6050_test";
 
-ImuSensor::ImuSensor() : _dev{  }, _buzzer(), _average_acceleration_y_axis(0), _average_rotation_y_axis(0)
-{
+ImuSensor::ImuSensor() : _dev{  }, _buzzer(), _average_acceleration_y_axis(0), _average_rotation_y_axis(0), _task_handle(nullptr)
 
+{
+    _imu_mutex = xSemaphoreCreateMutex();
+    configASSERT(_imu_mutex != nullptr);
 }
 
 void ImuSensor::mpu6050_test(void *pvParameters)
 {
-
     ImuSensor* self = static_cast<ImuSensor*>(pvParameters); 
     while (1)
     {
@@ -31,6 +32,7 @@ void ImuSensor::mpu6050_test(void *pvParameters)
 
     while (1)
     {
+        xSemaphoreTake(self->_imu_mutex, portMAX_DELAY);
         float temp;
         mpu6050_acceleration_t accel = { 0 };
         mpu6050_rotation_t rotation = { 0 };
@@ -43,7 +45,8 @@ void ImuSensor::mpu6050_test(void *pvParameters)
         ESP_LOGI(TAG, "Rotation:     x=%.4f   y=%.4f   z=%.4f", rotation.x, rotation.y, rotation.z);
         ESP_LOGI(TAG, "Temperature:  %.1f", temp);
 
-        vTaskDelay(pdMS_TO_TICKS(100));
+        xSemaphoreGive(self->_imu_mutex);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
@@ -57,28 +60,41 @@ void ImuSensor::init()
 
 void ImuSensor::start_test()
 {
-    xTaskCreate(mpu6050_test, "mpu6050_test", configMINIMAL_STACK_SIZE * 6, this, 5, NULL);
+    int result = xTaskCreate(mpu6050_test, "mpu6050_test", configMINIMAL_STACK_SIZE * 6, this, 5, &_task_handle);
+    
+
+    configASSERT(result == pdPASS);
+    configASSERT(_task_handle != nullptr);
 }
 
 
 void ImuSensor::calibrate()
 {
+    xSemaphoreTake(_imu_mutex, portMAX_DELAY);
     _buzzer.beep_ms(40);
+    printf(
+    "current=%p, imu_task=%p\n",
+    static_cast<void*>(xTaskGetCurrentTaskHandle()),
+    static_cast<void*>(_task_handle)
+);
+    vTaskSuspend(_task_handle);
     mpu6050_acceleration_t accel;
     mpu6050_rotation_t rotation;
     float total_acceleration_y_axis = 0.f;
     float total_rotation_y_axis = 0.f;
-    for(int i = 0; i < 100; i++)
+    for(int i = 0; i < 1000; i++)
     {
         ESP_ERROR_CHECK(mpu6050_get_motion(&_dev, &accel, &rotation));
         total_acceleration_y_axis += accel.y;
         total_rotation_y_axis += rotation.y;
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(10));
     }
     _average_acceleration_y_axis = total_acceleration_y_axis / 1000;
     _average_rotation_y_axis = total_rotation_y_axis / 1000;
+     xSemaphoreGive(_imu_mutex);
     printf("Average acceleration: %f\n Average Rotation: %f\n", _average_acceleration_y_axis, _average_rotation_y_axis);
     _buzzer.beep_ms(500);
+    vTaskResume(_task_handle);
 }
 
 
