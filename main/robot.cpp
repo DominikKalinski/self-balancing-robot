@@ -10,7 +10,8 @@ Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO,
         CONFIG_MOTOR2_PWM_GPIO, 
         CONFIG_MOTOR2_ENCODER_A_YELLOW, 
         CONFIG_MOTOR2_ENCODER_B_WHITE,
-        PwmController::CHANNEL::CHANNEL1)
+        PwmController::CHANNEL::CHANNEL1),
+        _button(this), _imuSensor()
 {       
        _button.run_task();
 }
@@ -31,6 +32,10 @@ void Robot::start_rpm_task()
     _motor2.start_rpm_task();
 }
 
+void Robot::calibrate_imu()
+{
+    _imuSensor.calibrate();
+}
 
 Motor& Robot::motor1()
 {

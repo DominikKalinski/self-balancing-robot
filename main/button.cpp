@@ -1,9 +1,9 @@
-
+#include "robot.h"
 #include "button.h"
 #include "sdkconfig.h"
 #include "gpio-controller.h"
 
-Button::Button() : _gpio(CONFIG_BUTTON_GPIO), _button_queue{ }
+Button::Button(Robot* robot) : _gpio(CONFIG_BUTTON_GPIO), _button_queue{ }, _robot(robot)
 {
     gpio_config_t button_config;
     _button_queue = xQueueCreate(10, sizeof(uint8_t));
@@ -37,8 +37,8 @@ void Button::button_task(void* parameter)
 {
     
     Button* button = static_cast<Button*>(parameter);
-    uint32_t gpio;
     int64_t last_press = 0; //esp_timer_get_time();
+    uint32_t gpio;
     while(true)
     {
         if(xQueueReceive(button->button_queue(), &gpio, portMAX_DELAY))
@@ -49,7 +49,7 @@ void Button::button_task(void* parameter)
                 continue;
             }
             last_press = now;
-            printf("interrupt detected\n");
+            button->robot()->calibrate_imu();
         }
 
     }
@@ -71,3 +71,7 @@ uint8_t Button::gpio() const
     return _gpio;
 }
 
+Robot* Button::robot() const
+{
+    return _robot;
+}

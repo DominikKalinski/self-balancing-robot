@@ -14,7 +14,7 @@ extern "C" void app_main()
     sensor.start_test();
     Robot robot;
     robot.start_rpm_task();
-    Button button;
+    Button button(&robot);
     button.run_task();
     
     while(true)
