@@ -39,6 +39,11 @@ void Robot::calibrate_imu()
     _imuSensor.calibrate();
 }
 
+void Robot::balance()
+{
+    
+}
+
 Motor& Robot::motor1()
 {
     return _motor1;

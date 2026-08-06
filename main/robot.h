@@ -11,6 +11,7 @@ class Robot
     void switch_direction(Motor&);
     void start_rpm_task();
     void calibrate_imu();
+    void balance();
     Motor& motor1();
     Motor& motor2();
     private:
