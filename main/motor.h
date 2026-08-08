@@ -5,8 +5,13 @@
 class Motor
 {
     public:
-    
+    enum class DIRECTION
+    {
+        FORWARD,
+        REVERSE
+    };
     Motor(uint8_t, uint8_t, uint8_t, uint8_t, PwmController::CHANNEL);
+    void set_dir(Motor::DIRECTION);
     void switch_dir();
     void set_pwm(uint8_t pwm);
     uint8_t pwm_pin();

@@ -20,7 +20,24 @@ _rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _prev
      //_pwmController.pwm_pin_init(_pwm_pin, _channel);
 }
 
-
+void Motor::set_dir(Motor::DIRECTION direction)
+{
+    switch(direction)
+    {
+        case Motor::DIRECTION::FORWARD:
+        {
+            GpioController::setState(_dir_pin, GpioController::STATE::LOW);
+            _forward = true;
+            break;
+        }
+        case Motor::DIRECTION::REVERSE:
+        {
+            GpioController::setState(_dir_pin, GpioController::STATE::HIGH);
+            _forward = false;
+            break;
+        }
+    }
+}
 
 void Motor::switch_dir()
 {
@@ -38,7 +55,7 @@ void Motor::switch_dir()
 
 void Motor::set_pwm(uint8_t pwm_percentage)
 {
-    //_pwmController.pwm_set(pwm_percentage, _channel);
+    _pwmController.pwm_set(pwm_percentage, _channel);
 }
 
 uint8_t Motor::pwm_pin()

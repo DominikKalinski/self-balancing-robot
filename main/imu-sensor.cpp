@@ -6,13 +6,13 @@
 static const char *TAG = "mpu6050_test";
 
 ImuSensor::ImuSensor() : _dev{  }, _buzzer(), _average_acceleration_y_axis(0), _average_acceleration_z_axis(0),
- _average_rotation_y_axis(0), _task_handle(nullptr), _flashStorage(FlashStorage::instance()), _previous_time(0)
+ _average_rotation_x_axis(0), _angle_gyroscope_x(0), _corrected_angle_x(0), _task_handle(nullptr), _flashStorage(FlashStorage::instance()), _previous_time(0)
 {
     _imu_mutex = xSemaphoreCreateMutex();
     configASSERT(_imu_mutex != nullptr);
     _average_acceleration_y_axis = _flashStorage.load_from_flash("acceleration_y");
     _average_acceleration_z_axis = _flashStorage.load_from_flash("acceleration_z");
-    _average_rotation_y_axis = _flashStorage.load_from_flash("rotation");
+    _average_rotation_x_axis = _flashStorage.load_from_flash("rotation_x");
 }
 
 void ImuSensor::mpu6050_test(void *pvParameters)
@@ -47,14 +47,14 @@ void ImuSensor::mpu6050_test(void *pvParameters)
         ESP_ERROR_CHECK(mpu6050_get_motion(&self->_dev, &accel, &rotation));
         xSemaphoreGive(self->_imu_mutex);
 
-         printf("\033[2J\033[H");
-        ESP_LOGI(TAG, "**********************************************************************");
-        ESP_LOGI(TAG, "Acceleration: x=%.4f   y=%.4f   z=%.4f", accel.x, accel.y, accel.z);
-        ESP_LOGI(TAG, "Rotation:     x=%.4f   y=%.4f   z=%.4f", rotation.x, rotation.y, rotation.z);
-        ESP_LOGI(TAG, "Temperature:  %.1f", temp);
+        //  printf("\033[2J\033[H");
+        // ESP_LOGI(TAG, "**********************************************************************");
+        // ESP_LOGI(TAG, "Acceleration: x=%.4f   y=%.4f   z=%.4f", accel.x, accel.y, accel.z);
+        // ESP_LOGI(TAG, "Rotation:     x=%.4f   y=%.4f   z=%.4f", rotation.x, rotation.y, rotation.z);
+        // ESP_LOGI(TAG, "Temperature:  %.1f", temp);
         
-        
-        vTaskDelay(pdMS_TO_TICKS(500));
+        self->update_angles();
+        vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
@@ -68,7 +68,7 @@ void ImuSensor::init()
 
 void ImuSensor::start_test()
 {
-    int result = xTaskCreate(mpu6050_test, "mpu6050_test", configMINIMAL_STACK_SIZE * 6, this, 5, &_task_handle);
+    BaseType_t result = xTaskCreate(mpu6050_test, "mpu6050_test", configMINIMAL_STACK_SIZE * 6, this, 5, &_task_handle);
     print_averages();
 
     configASSERT(result == pdPASS);
@@ -88,24 +88,24 @@ void ImuSensor::calibrate()
     mpu6050_rotation_t rotation;
     float total_acceleration_y_axis = 0.f;
     float total_acceleration_z_axis = 0.f;
-    float total_rotation_y_axis = 0.f;
+    float total_rotation_x_axis = 0.f;
     for(int i = 0; i < 1000; i++)
     {
         ESP_ERROR_CHECK(mpu6050_get_motion(&_dev, &accel, &rotation));
         total_acceleration_y_axis += accel.y;
         total_acceleration_z_axis += accel.z;
-        total_rotation_y_axis += rotation.y;
+        total_rotation_x_axis += rotation.x;
         vTaskDelay(pdMS_TO_TICKS(10));
     }
     _average_acceleration_y_axis = total_acceleration_y_axis / 1000.f;
     _average_acceleration_z_axis = total_acceleration_z_axis / 1000.f;
-    _average_rotation_y_axis = total_rotation_y_axis / 1000.f;
+    _average_rotation_x_axis = total_rotation_x_axis / 1000.f;
      xSemaphoreGive(_imu_mutex);
     _buzzer.beep_ms(500);
     //vTaskResume(_task_handle);
     _flashStorage.save_to_flash("acceleration_y", _average_acceleration_y_axis);
     _flashStorage.save_to_flash("acceleration_z", _average_acceleration_z_axis);
-    _flashStorage.save_to_flash("rotation", _average_rotation_y_axis);
+    _flashStorage.save_to_flash("rotation_x", _average_rotation_x_axis);
     print_averages();
 }
 
@@ -119,31 +119,42 @@ void ImuSensor::update_angles()
     xSemaphoreGive(_imu_mutex);
     int64_t time_now = esp_timer_get_time();
 
-    float corrected_rotation_y = rotation.y - _average_rotation_y_axis;
+    float corrected_rotation_x = rotation.x - _average_rotation_x_axis;
     float corrected_acceleration_y = accel.y - _average_acceleration_y_axis;
-    float corrected_acceleration_z = accel.z - _average_acceleration_z_axis;
+    float corrected_acceleration_z = accel.z + (1 -_average_acceleration_z_axis);
+
+    
+
     
     float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
     _previous_time = time_now;
-    _angle_gyroscope_y += (delta_time_seconds * corrected_rotation_y);
-    _angle_accelerator_y = ( (atan2f(corrected_rotation_y, corrected_acceleration_z) * 180) / _PI);
+    _angle_gyroscope_x = (delta_time_seconds * corrected_rotation_x);
+    _angle_accelerator_x = ( (atan2f(corrected_acceleration_y, corrected_acceleration_z) * 180) / _PI);
+    
+    _corrected_angle_x = 0.98f * (_corrected_angle_x + _angle_gyroscope_x) + 0.02f * _angle_accelerator_x;
+    printf("Gyroscope angle Y: %f\nAccelerometer angle Y: %f\n", _angle_gyroscope_x, _angle_accelerator_x );
+    printf("Corrected Angle: %f\n", _corrected_angle_x);
 }
-
 
 void ImuSensor::print_averages() const
 {
     printf("Average acceleration: %f\nAverage rotation: %f\nAverage acceleration Z: %f", 
-        _average_acceleration_y_axis, _average_rotation_y_axis, _average_acceleration_z_axis);
+        _average_acceleration_y_axis, _average_rotation_x_axis, _average_acceleration_z_axis);
 }
 
-float ImuSensor::angle_accelerator_y() const
+float ImuSensor::angle_accelerator_x() const
 {
-    return _angle_accelerator_y;
+    return _angle_accelerator_x;
 }
 
-float ImuSensor::angle_gyroscope_y() const
+float ImuSensor::angle_gyroscope_x() const
 {
-    return _angle_gyroscope_y;
+    return _angle_gyroscope_x;
+}
+
+float ImuSensor::corrected_angle_x() const
+{
+    return _corrected_angle_x;
 }
 
 
