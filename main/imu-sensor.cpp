@@ -64,6 +64,7 @@ void ImuSensor::init()
     ESP_ERROR_CHECK(i2cdev_init());
     ESP_ERROR_CHECK( mpu6050_init_desc(&_dev, ADDR, (i2c_port_t)0, (gpio_num_t)(CONFIG_EXAMPLE_SDA_GPIO), (gpio_num_t)CONFIG_EXAMPLE_SCL_GPIO) );
     ESP_LOGI(TAG, "port=%d addr=0x%02X", _dev.i2c_dev.port, _dev.i2c_dev.addr);
+    ESP_ERROR_CHECK(mpu6050_init(&_dev));
 }
 
 void ImuSensor::start_test()
@@ -125,15 +126,15 @@ void ImuSensor::update_angles()
 
     
 
-    
+    //printf("sensor check: x: %f\n y%f\nz:%f\n", rotation.x, accel.y, accel.z);
     float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
     _previous_time = time_now;
     _angle_gyroscope_x = (delta_time_seconds * corrected_rotation_x);
     _angle_accelerator_x = ( (atan2f(corrected_acceleration_y, corrected_acceleration_z) * 180) / _PI);
     
     _corrected_angle_x = 0.98f * (_corrected_angle_x + _angle_gyroscope_x) + 0.02f * _angle_accelerator_x;
-    printf("Gyroscope angle Y: %f\nAccelerometer angle Y: %f\n", _angle_gyroscope_x, _angle_accelerator_x );
-    printf("Corrected Angle: %f\n", _corrected_angle_x);
+    // printf("Gyroscope angle Y: %f\nAccelerometer angle Y: %f\n", _angle_gyroscope_x, _angle_accelerator_x );
+    // printf("Corrected Angle: %f\n", _corrected_angle_x);
 }
 
 void ImuSensor::print_averages() const

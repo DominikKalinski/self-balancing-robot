@@ -10,6 +10,7 @@
 #include "flash-storage.h"
 extern "C" void app_main()
 {
-    static Robot robot;
-    robot.start_balance_task();
+    Robot robot;
+    robot.start_rpm_task();
+    robot.balance();
 }

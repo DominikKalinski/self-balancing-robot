@@ -12,7 +12,7 @@ class PwmController
     PwmController();
     static void ledc_init(void);
     void pwm_pin_init(uint8_t, PwmController::CHANNEL);
-    void pwm_set(uint8_t, PwmController::CHANNEL);
+    void pwm_set(float, PwmController::CHANNEL);
     private:
 
 };

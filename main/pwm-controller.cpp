@@ -41,8 +41,13 @@ void PwmController::pwm_pin_init(uint8_t pin, PwmController::CHANNEL CHANNEL)
     ESP_ERROR_CHECK (ledc_channel_config(&channel));
 }
 
-void PwmController::pwm_set(uint8_t pwm_duty_percentage, PwmController::CHANNEL CHANNEL)
+void PwmController::pwm_set(float pwm_duty_percentage, PwmController::CHANNEL CHANNEL)
 {
+    int percentage = pwm_duty_percentage;
+    if(pwm_duty_percentage < 0)
+    {
+        pwm_duty_percentage *= -1;
+    }
     ledc_channel_t chnl = LEDC_CHANNEL_0;
     switch(CHANNEL)
     {

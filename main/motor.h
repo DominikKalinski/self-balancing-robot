@@ -13,11 +13,11 @@ class Motor
     Motor(uint8_t, uint8_t, uint8_t, uint8_t, PwmController::CHANNEL);
     void set_dir(Motor::DIRECTION);
     void switch_dir();
-    void set_pwm(uint8_t pwm);
+    void set_pwm(float pwm);
     uint8_t pwm_pin();
     void start_rpm_task();
     PcntController& pcntController();
-    double& rpm();
+    float& rpm();
     int64_t& previous_time_us();
     int encoder_a_pin() const;
     
@@ -29,7 +29,7 @@ class Motor
     uint8_t _pwm_pin;
     uint8_t _encoder_A_pin;
     uint8_t _encoder_B_pin;
-    double _rpm;
+    float _rpm;
     PwmController::CHANNEL _channel;
     PcntController _pcntController;
     int64_t _previous_time_us;

@@ -13,11 +13,11 @@ _rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _prev
 {
     GpioController::setDirection(_dir_pin, GpioController::DIRECTION::OUTPUT);
     GpioController::setDirection(_pwm_pin, GpioController::DIRECTION::OUTPUT);
-    // GpioController::setDirection(_encoder_A_pin, GpioController::DIRECTION::INPUT);
-    // GpioController::setDirection(_encoder_B_pin, GpioController::DIRECTION::INPUT);
+    GpioController::setDirection(_encoder_A_pin, GpioController::DIRECTION::INPUT);
+    GpioController::setDirection(_encoder_B_pin, GpioController::DIRECTION::INPUT);
     GpioController::setState(_dir_pin, GpioController::STATE::LOW);
     GpioController::setState(_pwm_pin, GpioController::STATE::LOW);
-     //_pwmController.pwm_pin_init(_pwm_pin, _channel);
+     _pwmController.pwm_pin_init(_pwm_pin, _channel);
 }
 
 void Motor::set_dir(Motor::DIRECTION direction)
@@ -53,7 +53,7 @@ void Motor::switch_dir()
     
 }
 
-void Motor::set_pwm(uint8_t pwm_percentage)
+void Motor::set_pwm(float pwm_percentage)
 {
     _pwmController.pwm_set(pwm_percentage, _channel);
 }
@@ -73,7 +73,7 @@ PcntController& Motor::pcntController()
     return _pcntController;
 }
 
-double& Motor::rpm()
+float& Motor::rpm()
 {
     return _rpm;
 }
@@ -97,11 +97,10 @@ void Motor::update_rpm_task_A(void* parameter)
         int current_pulses = motor->pcntController().get_pulses();
         int64_t current_time_us = esp_timer_get_time();
         int64_t difference_us = current_time_us - motor->previous_time_us();
-        motor->rpm() = (static_cast<double>(current_pulses) / (static_cast<double>(difference_us) / 60000000)) / 16;
+        motor->rpm() = (static_cast<float>(current_pulses) / (static_cast<float>(difference_us) / 60000000)) / 16;
         motor->previous_time_us() = current_time_us;
         motor->pcntController().clear_pulses();
         vTaskDelay(pdMS_TO_TICKS(100));
-        
     }
 }
 
