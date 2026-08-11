@@ -13,14 +13,16 @@ class Button
 {
     public:
     Button(Robot*);
+    void isr_init() const;
     static void IRAM_ATTR button_isr_handler(void*);
     static void button_task(void*);
-    void run_task();
     QueueHandle_t button_queue() const;
     uint8_t gpio() const;
     Robot* robot() const;
+    volatile bool &button_pressed();
     private:
     uint8_t _gpio;
+    volatile bool _button_pressed;
     QueueHandle_t _button_queue;
     Robot* _robot;
 };
