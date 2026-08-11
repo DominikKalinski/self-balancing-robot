@@ -15,6 +15,7 @@ class ImuSensor
     float angle_accelerator_x() const;
     float angle_gyroscope_x() const;
     float corrected_angle_x() const;
+    float correcter_rotation_x() const;
     SemaphoreHandle_t _imu_mutex = nullptr;
     private:
     mpu6050_dev_t _dev;
@@ -26,6 +27,7 @@ class ImuSensor
     float _angle_accelerator_x;
     float _angle_gyroscope_x;
     float _corrected_angle_x;
+    float _corrected_rotation_x;
     TaskHandle_t _task_handle;
     FlashStorage& _flashStorage;
     int64_t _previous_time;

@@ -12,6 +12,7 @@ class Robot
     void choose_direction();
     void start_rpm_task();
     void calibrate_imu();
+    float Kd();
     void pid();
     Motor& motor1();
     Motor& motor2();
@@ -28,4 +29,5 @@ class Robot
     float _previous_error;
     float _integral;
     int64_t _previous_time;
+    int _counter;
 };

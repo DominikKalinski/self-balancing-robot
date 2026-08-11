@@ -6,7 +6,7 @@
 static const char *TAG = "mpu6050_test";
 
 ImuSensor::ImuSensor() : _dev{  }, _buzzer(), _average_acceleration_y_axis(0), _average_acceleration_z_axis(0),
- _average_rotation_x_axis(0), _angle_gyroscope_x(0), _corrected_angle_x(0), _task_handle(nullptr), _flashStorage(FlashStorage::instance()), _previous_time(0)
+ _average_rotation_x_axis(0), _angle_gyroscope_x(0), _corrected_angle_x(0), _corrected_rotation_x(0), _task_handle(nullptr), _flashStorage(FlashStorage::instance()), _previous_time(0)
 {
     _imu_mutex = xSemaphoreCreateMutex();
     configASSERT(_imu_mutex != nullptr);
@@ -120,7 +120,7 @@ void ImuSensor::update_angles()
     xSemaphoreGive(_imu_mutex);
     int64_t time_now = esp_timer_get_time();
 
-    float corrected_rotation_x = rotation.x - _average_rotation_x_axis;
+    _corrected_rotation_x = rotation.x - _average_rotation_x_axis;
     float corrected_acceleration_y = accel.y - _average_acceleration_y_axis;
     float corrected_acceleration_z = accel.z + (1 -_average_acceleration_z_axis);
 
@@ -129,7 +129,7 @@ void ImuSensor::update_angles()
     //printf("sensor check: x: %f\n y%f\nz:%f\n", rotation.x, accel.y, accel.z);
     float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
     _previous_time = time_now;
-    _angle_gyroscope_x = (delta_time_seconds * corrected_rotation_x);
+    _angle_gyroscope_x = (delta_time_seconds * _corrected_rotation_x);
     _angle_accelerator_x = ( (atan2f(corrected_acceleration_y, corrected_acceleration_z) * 180) / _PI);
     
     _corrected_angle_x = 0.98f * (_corrected_angle_x + _angle_gyroscope_x) + 0.02f * _angle_accelerator_x;
@@ -158,5 +158,9 @@ float ImuSensor::corrected_angle_x() const
     return _corrected_angle_x;
 }
 
+float ImuSensor::correcter_rotation_x() const
+{
+    return _corrected_rotation_x;
+}
 
 //PRIVATE//     //PRIVATE       //PRIVATE       //PRIVATE       //PRIVATE
