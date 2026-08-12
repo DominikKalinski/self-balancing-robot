@@ -86,8 +86,8 @@ void Robot::nullifier(float* P, float *I, float* D)
 
 void Robot::PID(float delta_time_seconds)
 {
-    float P = 29.8f;
-    float I = 1200.f;
+    float P = 10.8f;
+    float I = 100.f;
     float D = 0.f;
     //nullifier(&P, &I, &D);
     _output = _angleEstimator.PID(P, I, D, delta_time_seconds);

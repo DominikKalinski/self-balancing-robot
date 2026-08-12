@@ -26,7 +26,7 @@ float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds)
     float output = (P * error) + (I * (_integral += error * delta_time_seconds)) + (D * rotation);
 
     if(_counter++ > 20){ printf("delta time: %f\nIntegral: %f\nError: %f\n Output: %f\n\n", delta_time_seconds, _integral, error, output); _counter = 0; }
-    _integral = std::clamp(_integral, -0.17f, 0.17f);
+    _integral = std::clamp(_integral, -1.f, 1.f);
     return output;
 }
 
