@@ -1,8 +1,9 @@
 #include <cmath>
+#include <algorithm>
 #include "angle-estimator.h"
 #include "esp_timer.h"
-AngleEstimator::AngleEstimator(ImuSensor* imuSensor) : _integral(0.f), _average_acceleration_y_axis(0), _average_acceleration_z_axis(0),
-_average_rotation_x_axis(0), _corrected_angle_x(0), _corrected_rotation_x(0), _previous_time(0), _imuSensor(imuSensor), _flashStorage(FlashStorage::instance())
+AngleEstimator::AngleEstimator(ImuSensor* imuSensor) : _counter(0), _integral(0.f), _average_acceleration_y_axis(0), _average_acceleration_z_axis(0),
+_average_rotation_x_axis(0), _corrected_angle_x(0), _corrected_rotation_x(0), _imuSensor(imuSensor), _flashStorage(FlashStorage::instance())
 {
      _buzzer.beep_ms(200);
 }
@@ -14,35 +15,31 @@ void AngleEstimator::load_balance_points_from_flash()
     _average_rotation_x_axis = _flashStorage.load_from_flash("rotation_x");
 }
 
-float AngleEstimator::PID(float P, float I, float D)
+float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds)
 {
-    update_angles();
-    int64_t time_now = esp_timer_get_time();
-    float delta_time = static_cast<float>((time_now - _previous_time ) / 1000000.f);
+    update_angles(delta_time_seconds);
     float error = _corrected_angle_x;
     float rotation = _corrected_rotation_x;
 
     if(error < 0.3f && error > -0.3f){ D = 0.0f; }
         
-    float output = (P * error) + (I * (_integral += error * delta_time)) + (D * rotation);
+    float output = (P * error) + (I * (_integral += error * delta_time_seconds)) + (D * rotation);
 
-    _previous_time = time_now;
+    if(_counter++ > 20){ printf("delta time: %f\nIntegral: %f\nError: %f\n Output: %f\n\n", delta_time_seconds, _integral, error, output); _counter = 0; }
+    _integral = std::clamp(_integral, -0.17f, 0.17f);
     return output;
 }
 
-void AngleEstimator::update_angles()
+void AngleEstimator::update_angles(float delta_time_seconds)
 {
     mpu6050_acceleration_t accel = {  };
     mpu6050_rotation_t rotation = {  };
     _imuSensor->metrics(&accel, &rotation);
-    int64_t time_now = esp_timer_get_time();
     
 
     _corrected_rotation_x = rotation.x - _average_rotation_x_axis;
     float corrected_acceleration_y = accel.y - _average_acceleration_y_axis;
     float corrected_acceleration_z = accel.z + (1 -_average_acceleration_z_axis);
-    float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
-    _previous_time = time_now;
     float angle_gyroscope_x = (delta_time_seconds * _corrected_rotation_x);
     float angle_accelerator_x = ( (atan2f(corrected_acceleration_y, corrected_acceleration_z) * 180) / _PI);
     

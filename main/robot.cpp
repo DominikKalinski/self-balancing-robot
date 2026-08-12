@@ -1,6 +1,6 @@
 #include <algorithm>
 #include "robot.h"
-
+#include "esp_timer.h"
 Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO, 
         CONFIG_MOTOR1_PWM_GPIO, 
         CONFIG_MOTOR1_ENCODER_A_YELLOW, 
@@ -22,11 +22,15 @@ void Robot::balance()
    
     while(true)
     {
-        PID();
+        int64_t time_now = esp_timer_get_time();
+        float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
+        _previous_time = time_now;
+        PID(delta_time_seconds);
         set_motor_pwm(_motor1, _output);
         set_motor_pwm(_motor2, _output);
         choose_direction();
         vTaskDelay(pdMS_TO_TICKS(5));
+        
 
         if(_button.button_pressed())
         {
@@ -80,13 +84,13 @@ void Robot::nullifier(float* P, float *I, float* D)
     *D = 0.f;
 }
 
-void Robot::PID()
+void Robot::PID(float delta_time_seconds)
 {
     float P = 29.8f;
     float I = 1200.f;
     float D = 0.f;
     //nullifier(&P, &I, &D);
-    _output = _angleEstimator.PID(P, I, D);
+    _output = _angleEstimator.PID(P, I, D, delta_time_seconds);
 }
 
 void Robot::set_motor_pwm(Motor& motor, float percentage)

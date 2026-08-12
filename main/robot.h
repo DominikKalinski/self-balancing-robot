@@ -28,5 +28,5 @@ class Robot
     
     
     void set_motor_pwm(Motor&, float);
-    void PID();
+    void PID(float);
 };
