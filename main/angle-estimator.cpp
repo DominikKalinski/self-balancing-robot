@@ -14,24 +14,19 @@ void AngleEstimator::load_balance_points_from_flash()
     _average_rotation_x_axis = _flashStorage.load_from_flash("rotation_x");
 }
 
-float AngleEstimator::PID(float Kp, float Ki, float Kd)
+float AngleEstimator::PID(float P, float I, float D)
 {
     update_angles();
     int64_t time_now = esp_timer_get_time();
     float delta_time = static_cast<float>((time_now - _previous_time ) / 1000000.f);
     float error = _corrected_angle_x;
     float rotation = _corrected_rotation_x;
-    if(error > 0.3f || error < -0.3f)
-        {
-            Kd = 2.0f;
-        }
-        else
-        {
-            Kd = 0.f;
-        }
-    float output = (Kp * error) + (Ki * (_integral += error * delta_time)) + (Kd * rotation);
 
-    
+    if(error < 0.3f && error > -0.3f){ D = 0.0f; }
+        
+    float output = (P * error) + (I * (_integral += error * delta_time)) + (D * rotation);
+
+    _previous_time = time_now;
     return output;
 }
 
@@ -43,12 +38,12 @@ void AngleEstimator::update_angles()
     int64_t time_now = esp_timer_get_time();
     
 
-    float corrected_rotation_x = rotation.x - _average_rotation_x_axis;
+    _corrected_rotation_x = rotation.x - _average_rotation_x_axis;
     float corrected_acceleration_y = accel.y - _average_acceleration_y_axis;
     float corrected_acceleration_z = accel.z + (1 -_average_acceleration_z_axis);
     float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
     _previous_time = time_now;
-    float angle_gyroscope_x = (delta_time_seconds * corrected_rotation_x);
+    float angle_gyroscope_x = (delta_time_seconds * _corrected_rotation_x);
     float angle_accelerator_x = ( (atan2f(corrected_acceleration_y, corrected_acceleration_z) * 180) / _PI);
     
     _corrected_angle_x = 0.98f * (_corrected_angle_x + angle_gyroscope_x) + 0.02f * angle_accelerator_x;

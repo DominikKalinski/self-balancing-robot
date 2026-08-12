@@ -30,6 +30,8 @@ void Robot::balance()
 
         if(_button.button_pressed())
         {
+            set_motor_pwm(_motor1, 0.f);
+            set_motor_pwm(_motor2, 0.f);
             _angleEstimator.calibrate_balance_point();
             _button.button_pressed() = false;
         }
@@ -59,7 +61,7 @@ void Robot::start_rpm_task()
 }
 
 
-void Robot::button_init() const
+void Robot::button_init()
 {
     _button.isr_init();
 }
@@ -71,13 +73,19 @@ void Robot::imu_sensor_init()
 
 
 
-
+void Robot::nullifier(float* P, float *I, float* D)
+{
+    *P = 0.f;
+    *I = 0.f;
+    *D = 0.f;
+}
 
 void Robot::PID()
 {
     float P = 29.8f;
     float I = 1200.f;
     float D = 0.f;
+    //nullifier(&P, &I, &D);
     _output = _angleEstimator.PID(P, I, D);
 }
 

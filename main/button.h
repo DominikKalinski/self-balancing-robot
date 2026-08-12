@@ -13,7 +13,7 @@ class Button
 {
     public:
     Button(Robot*);
-    void isr_init() const;
+    void isr_init();
     static void IRAM_ATTR button_isr_handler(void*);
     static void button_task(void*);
     QueueHandle_t button_queue() const;

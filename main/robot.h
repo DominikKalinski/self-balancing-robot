@@ -10,8 +10,9 @@ class Robot
     void balance();
     void choose_direction();
     void start_rpm_task();
-    void button_init() const;
+    void button_init();
     void imu_sensor_init();
+    void nullifier(float*, float*, float*);
     private:
     PwmController _pwmController;
     Motor _motor1;

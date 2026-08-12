@@ -8,7 +8,7 @@ Button::Button(Robot* robot) : _gpio(CONFIG_BUTTON_GPIO), _button_pressed(false)
     
 }
 
-void Button::isr_init() const
+void Button::isr_init()
 {
     gpio_config_t button_config;
     //_button_queue = xQueueCreate(10, sizeof(uint8_t));
@@ -20,7 +20,7 @@ void Button::isr_init() const
 
     ESP_ERROR_CHECK(gpio_config(&button_config));
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
-    ESP_ERROR_CHECK(gpio_isr_handler_add( (gpio_num_t)_gpio, button_isr_handler, NULL));
+    ESP_ERROR_CHECK(gpio_isr_handler_add( (gpio_num_t)_gpio, button_isr_handler, this));
 }
 
 void Button::button_isr_handler(void* arg)
