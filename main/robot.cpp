@@ -29,8 +29,11 @@ void Robot::balance()
         set_motor_pwm(_motor1, _output);
         set_motor_pwm(_motor2, _output);
         choose_direction();
+        _motor1.update_rpm(delta_time_seconds);
+        _motor2.update_rpm(delta_time_seconds);
         vTaskDelay(pdMS_TO_TICKS(5));
-        
+
+        if(_counter++ > 20) {printf("Motor1 RPM: %f\nMotor2 RPM: %f\n\n", _motor1.rpm(), _motor2.rpm()); _counter = 0;}
 
         if(_button.button_pressed())
         {
@@ -58,16 +61,16 @@ void Robot::choose_direction()
     }
 }
 
-void Robot::start_rpm_task()
-{
-    _motor1.start_rpm_task();
-    _motor2.start_rpm_task();
-}
 
 
 void Robot::button_init()
 {
     _button.isr_init();
+}
+
+void Robot::load_balance_point_from_flash()
+{
+    _angleEstimator.load_balance_points_from_flash();
 }
 
 void Robot::imu_sensor_init()

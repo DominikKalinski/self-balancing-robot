@@ -24,8 +24,15 @@ float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds)
     if(error < 0.3f && error > -0.3f){ D = 0.0f; }
         
     float output = (P * error) + (I * (_integral += error * delta_time_seconds)) + (D * rotation);
-
-    if(_counter++ > 20){ printf("delta time: %f\nIntegral: %f\nError: %f\n Output: %f\n\n", delta_time_seconds, _integral, error, output); _counter = 0; }
+     if(output < 3.f && output > 0.f)
+       {
+        output = 4.f;
+       }
+       else if (output > -3.f && output < 0.f)
+       {
+        output = -4.f;
+       }
+    //if(_counter++ > 20){ printf("delta time: %f\nIntegral: %f\nError: %f\n Output: %f\n\n", delta_time_seconds, _integral, error, output); _counter = 0; }
     _integral = std::clamp(_integral, -1.f, 1.f);
     return output;
 }
@@ -71,4 +78,7 @@ void AngleEstimator::calibrate_balance_point()
     _flashStorage.save_to_flash("acceleration_y", _average_acceleration_y_axis);
     _flashStorage.save_to_flash("acceleration_z", _average_acceleration_z_axis);
     _flashStorage.save_to_flash("rotation_x", _average_rotation_x_axis);
+    vTaskDelay(pdMS_TO_TICKS(5000));
+    _buzzer.beep_ms(100);
+    vTaskDelay(pdMS_TO_TICKS(2000));
 }

@@ -15,14 +15,13 @@ class Motor
     void switch_dir();
     void set_pwm(float pwm);
     uint8_t pwm_pin();
-    void start_rpm_task();
     PcntController& pcntController();
-    float& rpm();
+    float rpm() const;
     int64_t& previous_time_us();
     int encoder_a_pin() const;
+    void update_rpm(float);
     
     private:
-    static void update_rpm_task_A(void*);
     PwmController _pwmController;
     bool _forward;
     uint8_t _dir_pin;
@@ -32,5 +31,5 @@ class Motor
     float _rpm;
     PwmController::CHANNEL _channel;
     PcntController _pcntController;
-    int64_t _previous_time_us;
+    int _counter;
 };

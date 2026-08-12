@@ -11,6 +11,7 @@ class Robot
     void choose_direction();
     void start_rpm_task();
     void button_init();
+    void load_balance_point_from_flash();
     void imu_sensor_init();
     void nullifier(float*, float*, float*);
     private:

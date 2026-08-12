@@ -9,7 +9,7 @@
 
 Motor::Motor(uint8_t dir_pin, uint8_t pwm_pin, uint8_t encoder_A_pin, uint8_t encoder_B_pin, PwmController::CHANNEL channel) : 
 _forward(true), _dir_pin(dir_pin), _pwm_pin(pwm_pin), _encoder_A_pin(encoder_A_pin), _encoder_B_pin(encoder_B_pin), 
-_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _previous_time_us(0)
+_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _counter(0)
 {
     GpioController::setDirection(_dir_pin, GpioController::DIRECTION::OUTPUT);
     GpioController::setDirection(_pwm_pin, GpioController::DIRECTION::OUTPUT);
@@ -63,44 +63,30 @@ uint8_t Motor::pwm_pin()
     return _pwm_pin;
 }
 
-void Motor::start_rpm_task()
-{
-    xTaskCreate(update_rpm_task_A, "update_rpm_task", configMINIMAL_STACK_SIZE * 6, this, 5, NULL);
-}
+
 
 PcntController& Motor::pcntController()
 {
     return _pcntController;
 }
 
-float& Motor::rpm()
+float Motor::rpm() const
 {
     return _rpm;
 }
 
-int64_t& Motor::previous_time_us()
-{
-    return _previous_time_us;
-}
+
 
 int Motor::encoder_a_pin() const
 {
     return static_cast<int>(_encoder_A_pin);
 }
 
-//PRIVATE       //PRIVATE       //PRIVATE       //PRIVATE       //PRIVATE
-void Motor::update_rpm_task_A(void* parameter)
+void Motor::update_rpm(float delta_time_seconds)
 {
-    Motor* motor = static_cast<Motor*>(parameter);
-    while(true)
-    {
-        int current_pulses = motor->pcntController().get_pulses();
-        int64_t current_time_us = esp_timer_get_time();
-        int64_t difference_us = current_time_us - motor->previous_time_us();
-        motor->rpm() = (static_cast<float>(current_pulses) / (static_cast<float>(difference_us) / 60000000)) / 16;
-        motor->previous_time_us() = current_time_us;
-        motor->pcntController().clear_pulses();
-        vTaskDelay(pdMS_TO_TICKS(100));
-    }
+    int current_pulses = _pcntController.get_pulses();
+    _rpm = current_pulses / 16.f / ((delta_time_seconds / 60.f));
+    _pcntController.clear_pulses();
+    //motor->rpm() = (static_cast<float>(current_pulses) / (static_cast<float>(difference_us) / 60000000)) / 16;
 }
 
