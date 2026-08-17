@@ -1,7 +1,10 @@
 #include <algorithm>
+#include <cmath>
 #include "robot.h"
 #include "esp_timer.h"
-Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO, 
+#include "driver/gpio.h"
+Robot::Robot() : 
+        _motor1(CONFIG_MOTOR1_DIR_GPIO, 
         CONFIG_MOTOR1_PWM_GPIO, 
         CONFIG_MOTOR1_ENCODER_A_YELLOW, 
         CONFIG_MOTOR1_ENCODER_B_WHITE,
@@ -12,9 +15,30 @@ Robot::Robot() : _motor1(CONFIG_MOTOR1_DIR_GPIO,
         CONFIG_MOTOR2_ENCODER_A_YELLOW, 
         CONFIG_MOTOR2_ENCODER_B_WHITE,
         PwmController::CHANNEL::CHANNEL1),
-        _button(this),_imuSensor(), _angleEstimator(&_imuSensor),_output(0.f), _previous_error(0.f), _integral(0.f), _previous_time(0), _counter(0)
+        _button(this),_imuSensor(), _angleEstimator(&_imuSensor),_output(0.f), _previous_error(0.f), _integral(0.f), _previous_time(0), _angle_goal(0.f),
+        _counter(0), _direction(Robot::DIRECTION::NONE)
 {       
-    
+}
+
+void Robot::imu_sensor_init()
+{
+    _imuSensor.init();
+}
+
+void Robot::button_init()
+{
+    _button.isr_init();
+}
+
+void Robot::start_rpm_task()
+{
+    _motor1.start_rpm_task();
+    _motor2.start_rpm_task();
+}
+
+void Robot::load_balance_point_from_flash()
+{
+    _angleEstimator.load_balance_points_from_flash();
 }
 
 void Robot::balance()
@@ -25,23 +49,36 @@ void Robot::balance()
         int64_t time_now = esp_timer_get_time();
         float delta_time_seconds = (time_now - _previous_time) / 1000000.f;
         _previous_time = time_now;
-        PID(delta_time_seconds);
+        PID(delta_time_seconds, _angle_goal);
         set_motor_pwm(_motor1, _output);
         set_motor_pwm(_motor2, _output);
         choose_direction();
-        _motor1.update_rpm(delta_time_seconds);
-        _motor2.update_rpm(delta_time_seconds);
+        move(_direction);
         vTaskDelay(pdMS_TO_TICKS(5));
 
         if(_counter++ > 20) {printf("Motor1 RPM: %f\nMotor2 RPM: %f\n\n", _motor1.rpm(), _motor2.rpm()); _counter = 0;}
 
-        if(_button.button_pressed())
+        if(_button.pressed())
         {
             set_motor_pwm(_motor1, 0.f);
             set_motor_pwm(_motor2, 0.f);
-            _angleEstimator.calibrate_balance_point();
-            _button.button_pressed() = false;
+            _angleEstimator.calibrate_balance_point(); //and store to flash
+            _button.pressed() = false;
         }
+    }
+}
+
+void Robot::move(Robot::DIRECTION direction)
+{
+    switch (direction)
+    {
+        case Robot::DIRECTION::FORWARD: _angle_goal = 0.5f; break;
+        case Robot::DIRECTION::REVERSE: _angle_goal = -0.5f; break;
+        case Robot::DIRECTION::NONE: _angle_goal = 0.f; break;
+    }
+    if(std::abs(_motor1.rpm()) > 500.f || std::abs(_motor2.rpm()) > 500.f)
+    {
+        _angle_goal = 0.f;
     }
 }
 
@@ -63,22 +100,6 @@ void Robot::choose_direction()
 
 
 
-void Robot::button_init()
-{
-    _button.isr_init();
-}
-
-void Robot::load_balance_point_from_flash()
-{
-    _angleEstimator.load_balance_points_from_flash();
-}
-
-void Robot::imu_sensor_init()
-{
-    _imuSensor.init();
-}
-
-
 
 void Robot::nullifier(float* P, float *I, float* D)
 {
@@ -87,13 +108,13 @@ void Robot::nullifier(float* P, float *I, float* D)
     *D = 0.f;
 }
 
-void Robot::PID(float delta_time_seconds)
+void Robot::PID(float delta_time_seconds, float angle_goal)
 {
     float P = 10.8f;
     float I = 100.f;
     float D = 0.f;
     //nullifier(&P, &I, &D);
-    _output = _angleEstimator.PID(P, I, D, delta_time_seconds);
+    _output = _angleEstimator.PID(P, I, D, delta_time_seconds, angle_goal);
 }
 
 void Robot::set_motor_pwm(Motor& motor, float percentage)

@@ -2,8 +2,8 @@
 #include <algorithm>
 #include "angle-estimator.h"
 #include "esp_timer.h"
-AngleEstimator::AngleEstimator(ImuSensor* imuSensor) : _counter(0), _integral(0.f), _average_acceleration_y_axis(0), _average_acceleration_z_axis(0),
-_average_rotation_x_axis(0), _corrected_angle_x(0), _corrected_rotation_x(0), _imuSensor(imuSensor), _flashStorage(FlashStorage::instance())
+AngleEstimator::AngleEstimator(ImuSensor* imuSensor) : _counter(0), _integral(0.f), _average_acceleration_y_axis(0.f), _average_acceleration_z_axis(0.f),
+_average_rotation_x_axis(0.f), _corrected_angle_x(0.f), _corrected_rotation_x(0.f), _imuSensor(imuSensor), _flashStorage(FlashStorage::instance())
 {
      _buzzer.beep_ms(200);
 }
@@ -15,10 +15,11 @@ void AngleEstimator::load_balance_points_from_flash()
     _average_rotation_x_axis = _flashStorage.load_from_flash("rotation_x");
 }
 
-float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds)
+float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds, float angle_goal)
 {
     update_angles(delta_time_seconds);
-    float error = _corrected_angle_x;
+    angle_goal = std::clamp(angle_goal, -1.f, 1.f);
+    float error = _corrected_angle_x + angle_goal;
     float rotation = _corrected_rotation_x;
 
     if(error < 0.3f && error > -0.3f){ D = 0.0f; }

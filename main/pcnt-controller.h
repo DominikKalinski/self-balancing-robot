@@ -11,5 +11,6 @@ class PcntController
     uint8_t _pinA;
     uint8_t _pinB;
     pcnt_unit_handle_t _pcnt_unit;
-    pcnt_channel_handle_t _pcnt_channel;
+    pcnt_channel_handle_t _channel_A;
+    pcnt_channel_handle_t _channel_B;
 };

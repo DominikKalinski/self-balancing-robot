@@ -3,7 +3,7 @@
 #include "sdkconfig.h"
 #include "gpio-controller.h"
 
-Button::Button(Robot* robot) : _gpio(CONFIG_BUTTON_GPIO), _button_pressed(false), _button_queue{ }, _robot(robot)
+Button::Button(Robot* robot) : _gpio(CONFIG_BUTTON_GPIO), _pressed(false), _button_queue{ }, _robot(robot)
 {
     
 }
@@ -26,7 +26,7 @@ void Button::isr_init()
 void Button::button_isr_handler(void* arg)
 {
     Button* button = static_cast<Button*>(arg);
-    button->_button_pressed = true;
+    button->_pressed = true;
 }
 
 
@@ -46,7 +46,7 @@ Robot* Button::robot() const
     return _robot;
 }
 
-volatile bool &Button::button_pressed()
+volatile bool &Button::pressed()
 {
-    return _button_pressed;
+    return _pressed;
 }

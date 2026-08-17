@@ -6,10 +6,11 @@
 #include "gpio-controller.h"
 #include "pcnt-controller.h"
 
+uint8_t Motor::_motor_count = 0;
 
 Motor::Motor(uint8_t dir_pin, uint8_t pwm_pin, uint8_t encoder_A_pin, uint8_t encoder_B_pin, PwmController::CHANNEL channel) : 
 _forward(true), _dir_pin(dir_pin), _pwm_pin(pwm_pin), _encoder_A_pin(encoder_A_pin), _encoder_B_pin(encoder_B_pin), 
-_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _counter(0)
+_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _previous_time(0), _motor_number(++_motor_count)
 {
     GpioController::setDirection(_dir_pin, GpioController::DIRECTION::OUTPUT);
     GpioController::setDirection(_pwm_pin, GpioController::DIRECTION::OUTPUT);
@@ -75,18 +76,32 @@ float Motor::rpm() const
     return _rpm;
 }
 
-
+void Motor::start_rpm_task()
+{
+    xTaskCreate(update_rpm, "update rpm", 512, this, 5, nullptr);
+}
 
 int Motor::encoder_a_pin() const
 {
     return static_cast<int>(_encoder_A_pin);
 }
 
-void Motor::update_rpm(float delta_time_seconds)
+void Motor::update_rpm(void* arg)
 {
-    int current_pulses = _pcntController.get_pulses();
-    _rpm = current_pulses / 16.f / ((delta_time_seconds / 60.f));
-    _pcntController.clear_pulses();
+    while(true)
+    {
+        Motor* motor = static_cast<Motor*>(arg);
+        int64_t time_now = esp_timer_get_time();
+        float delta_time_seconds = (time_now - motor->_previous_time) / 1000000.f;
+        int current_pulses = motor->_pcntController.get_pulses();
+        if(motor->_motor_number == 1) { motor->_rpm = current_pulses / 64.f / ((delta_time_seconds / 60.f)); }
+        else { motor->_rpm = -1 * (current_pulses / 64.f / ((delta_time_seconds / 60.f)));}
+        motor->_pcntController.clear_pulses();
+        motor->_previous_time = time_now;
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+
+    //if(motor->_counter++ > 20) {printf("Pulses: %d\n", current_pulses); _counter = 0;}
     //motor->rpm() = (static_cast<float>(current_pulses) / (static_cast<float>(difference_us) / 60000000)) / 16;
 }
 

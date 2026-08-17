@@ -6,13 +6,20 @@
 class Robot
 {
     public:
+    enum class DIRECTION
+    {
+        FORWARD,
+        REVERSE,
+        NONE
+    };
     Robot();
-    void balance();
-    void choose_direction();
-    void start_rpm_task();
-    void button_init();
-    void load_balance_point_from_flash();
     void imu_sensor_init();
+    void button_init();
+    void start_rpm_task();
+    void load_balance_point_from_flash();
+    void balance();
+    void move(Robot::DIRECTION);
+    void choose_direction();
     void nullifier(float*, float*, float*);
     private:
     PwmController _pwmController;
@@ -25,9 +32,11 @@ class Robot
     float _previous_error;
     float _integral;
     int64_t _previous_time;
+    float _angle_goal;
     int _counter;
-    
+    Robot::DIRECTION _direction;
     
     void set_motor_pwm(Motor&, float);
-    void PID(float);
+    void PID(float, float);
+
 };

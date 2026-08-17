@@ -1,7 +1,10 @@
 #pragma once
 #include <inttypes.h>
+#include <atomic>
 #include "pwm-controller.h"
 #include "pcnt-controller.h"
+
+
 class Motor
 {
     public:
@@ -19,7 +22,8 @@ class Motor
     float rpm() const;
     int64_t& previous_time_us();
     int encoder_a_pin() const;
-    void update_rpm(float);
+    void start_rpm_task();
+    static void update_rpm(void*);
     
     private:
     PwmController _pwmController;
@@ -28,8 +32,11 @@ class Motor
     uint8_t _pwm_pin;
     uint8_t _encoder_A_pin;
     uint8_t _encoder_B_pin;
-    float _rpm;
+    std::atomic<float> _rpm;
     PwmController::CHANNEL _channel;
     PcntController _pcntController;
-    int _counter;
+    int64_t _previous_time;
+    uint8_t _motor_number;
+    static uint8_t _motor_count;
 };
+

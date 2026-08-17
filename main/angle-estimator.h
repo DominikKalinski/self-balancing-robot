@@ -6,7 +6,7 @@ class AngleEstimator
     public:
     AngleEstimator(ImuSensor*);
     void load_balance_points_from_flash();
-    float PID(float, float, float, float);
+    float PID(float, float, float, float, float);
     void update_angles(float);
     void calibrate_balance_point();
     private:

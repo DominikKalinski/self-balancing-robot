@@ -2,7 +2,6 @@
 #include <mpu6050.h>
 #include "driver/gpio.h"
 #include "sdkconfig.h"
-#include "driver/gpio.h"
 #include "buzzer.h"
 #include "gpio-controller.h"
 Buzzer::Buzzer() : _gpio(CONFIG_BUZZER_GPIO)
