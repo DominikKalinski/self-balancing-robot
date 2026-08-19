@@ -46,7 +46,7 @@ Robot* Button::robot() const
     return _robot;
 }
 
-volatile bool &Button::pressed()
+volatile bool &Button::is_pressed()
 {
     return _pressed;
 }

@@ -15,5 +15,6 @@ void Application::init()
 void Application::run()
 {
     _robot.start_rpm_task();
+    _robot.start_auto_calibration_task();
     _robot.balance();
 }

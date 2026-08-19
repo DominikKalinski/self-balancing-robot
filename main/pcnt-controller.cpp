@@ -11,7 +11,7 @@ PcntController::PcntController(uint8_t pinA, uint8_t pinB) : _pinA(pinA), _pinB(
 
         unit_config.low_limit = -30000;
         unit_config.high_limit = 30000;
-        unit_config.flags.accum_count = 0;
+        unit_config.flags.accum_count = 1;
         unit_config.intr_priority = 0;
     
     ESP_ERROR_CHECK(pcnt_new_unit(&unit_config, &_pcnt_unit));
@@ -72,7 +72,7 @@ ESP_ERROR_CHECK(pcnt_channel_set_level_action(_channel_A, PCNT_CHANNEL_LEVEL_ACT
 }
 
 
-int PcntController::get_pulses() const
+int PcntController::pulses() const
 {
     int pulse_count = 0;
 

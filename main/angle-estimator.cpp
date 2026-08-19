@@ -15,25 +15,24 @@ void AngleEstimator::load_balance_points_from_flash()
     _average_rotation_x_axis = _flashStorage.load_from_flash("rotation_x");
 }
 
-float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds, float angle_goal)
+float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds, float angle_goal, float angle_goal_braking_offset)
 {
     update_angles(delta_time_seconds);
     angle_goal = std::clamp(angle_goal, -1.f, 1.f);
-    float error = _corrected_angle_x + angle_goal;
+    float error = _corrected_angle_x + angle_goal + angle_goal_braking_offset;
     float rotation = _corrected_rotation_x;
 
-    if(error < 0.3f && error > -0.3f){ D = 0.0f; }
-        
     float output = (P * error) + (I * (_integral += error * delta_time_seconds)) + (D * rotation);
-     if(output < 3.f && output > 0.f)
-       {
-        output = 4.f;
-       }
-       else if (output > -3.f && output < 0.f)
-       {
-        output = -4.f;
-       }
-    //if(_counter++ > 20){ printf("delta time: %f\nIntegral: %f\nError: %f\n Output: %f\n\n", delta_time_seconds, _integral, error, output); _counter = 0; }
+    if(output < 3.f && output > 0.f)
+    {
+     output = 4.f;
+    }
+    else if (output > -3.f && output < 0.f)
+    {
+     output = -4.f;
+    }
+    
+    //if(_counter++ > 20){ printf("Rotation: %f\nError: %f\nOutput: %f\n\n\n", rotation, error, output); _counter = 0; }
     _integral = std::clamp(_integral, -1.f, 1.f);
     return output;
 }

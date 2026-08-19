@@ -37,6 +37,7 @@ class Motor
     PcntController _pcntController;
     int64_t _previous_time;
     uint8_t _motor_number;
+    int _previous_pulses;
     static uint8_t _motor_count;
 };
 

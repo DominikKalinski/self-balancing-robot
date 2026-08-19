@@ -10,4 +10,5 @@ class Application
     void run();
     private:
     Robot _robot;
+    int64_t _previous_time;
 };

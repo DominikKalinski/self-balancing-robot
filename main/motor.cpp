@@ -10,7 +10,7 @@ uint8_t Motor::_motor_count = 0;
 
 Motor::Motor(uint8_t dir_pin, uint8_t pwm_pin, uint8_t encoder_A_pin, uint8_t encoder_B_pin, PwmController::CHANNEL channel) : 
 _forward(true), _dir_pin(dir_pin), _pwm_pin(pwm_pin), _encoder_A_pin(encoder_A_pin), _encoder_B_pin(encoder_B_pin), 
-_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _previous_time(0), _motor_number(++_motor_count)
+_rpm(0), _channel(channel), _pcntController(encoder_A_pin, encoder_B_pin), _previous_time(0), _motor_number(++_motor_count), _previous_pulses(0)
 {
     GpioController::setDirection(_dir_pin, GpioController::DIRECTION::OUTPUT);
     GpioController::setDirection(_pwm_pin, GpioController::DIRECTION::OUTPUT);
@@ -93,10 +93,12 @@ void Motor::update_rpm(void* arg)
         Motor* motor = static_cast<Motor*>(arg);
         int64_t time_now = esp_timer_get_time();
         float delta_time_seconds = (time_now - motor->_previous_time) / 1000000.f;
-        int current_pulses = motor->_pcntController.get_pulses();
-        if(motor->_motor_number == 1) { motor->_rpm = current_pulses / 64.f / ((delta_time_seconds / 60.f)); }
-        else { motor->_rpm = -1 * (current_pulses / 64.f / ((delta_time_seconds / 60.f)));}
-        motor->_pcntController.clear_pulses();
+        int current_pulses = motor->_pcntController.pulses();
+        int delta_pulses = current_pulses - motor->_previous_pulses;
+        motor->_previous_pulses = current_pulses;
+        if(motor->_motor_number == 1) { motor->_rpm = delta_pulses / 64.f / ((delta_time_seconds / 60.f)); }
+        else { motor->_rpm = -1 * (delta_pulses / 64.f / ((delta_time_seconds / 60.f)));}
+        //motor->_pcntController.clear_pulses();
         motor->_previous_time = time_now;
         vTaskDelay(pdMS_TO_TICKS(500));
     }

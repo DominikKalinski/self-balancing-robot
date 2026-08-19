@@ -19,7 +19,7 @@ class Button
     QueueHandle_t button_queue() const;
     uint8_t gpio() const;
     Robot* robot() const;
-    volatile bool &pressed();
+    volatile bool &is_pressed();
     private:
     uint8_t _gpio;
     volatile bool _pressed;
