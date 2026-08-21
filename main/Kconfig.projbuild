@@ -81,6 +81,12 @@ menu "Robot configuration"
             default 8
     endmenu
 
+    menu "Led"
+        config LED_GPIO
+            int"LED_GPIO"
+            default 8
+    endmenu
+
     menu "Button"
         config BUTTON_GPIO
             int "BUTTON_GPIO"

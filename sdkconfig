@@ -661,8 +661,14 @@ CONFIG_MOTOR2_ENCODER_B_WHITE=23
 #
 # Buzzer
 #
-CONFIG_BUZZER_GPIO=8
+CONFIG_BUZZER_GPIO=1
 # end of Buzzer
+
+#
+# Led
+#
+CONFIG_LED_GPIO=8
+# end of Led
 
 #
 # Button

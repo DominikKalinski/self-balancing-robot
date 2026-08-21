@@ -10,9 +10,10 @@ Buzzer::Buzzer() : _gpio(CONFIG_BUZZER_GPIO)
     GpioController::setState(_gpio, GpioController::STATE::LOW);
 }
 
-void Buzzer::beep_ms(int ms)
+void Buzzer::beep_ms(int ms, int amount)
 {
     _ms = ms;
+    _amount = amount;
     xTaskCreate(beep, "mpu6050_test", 1536 * 6, this, 5, NULL);
 }
 
@@ -29,8 +30,13 @@ uint8_t Buzzer::gpio() const
 void Buzzer::beep(void* parameter)
 {
     Buzzer* buzzer = static_cast<Buzzer*>(parameter);
-    GpioController::setState( buzzer->gpio(), GpioController::STATE::HIGH);
-    vTaskDelay( pdMS_TO_TICKS( buzzer->ms() ) );
-    GpioController::setState( buzzer->gpio(), GpioController::STATE::LOW);
+    for(int i = 0; i < buzzer->_amount; i++)
+    {
+        GpioController::setState( buzzer->gpio(), GpioController::STATE::HIGH);
+        vTaskDelay( pdMS_TO_TICKS( buzzer->ms() ) );
+        GpioController::setState( buzzer->gpio(), GpioController::STATE::LOW);
+        vTaskDelay( pdMS_TO_TICKS( buzzer->ms() ) );
+    }
+    
     vTaskDelete(NULL);
 }

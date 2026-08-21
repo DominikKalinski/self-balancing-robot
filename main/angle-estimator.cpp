@@ -5,7 +5,7 @@
 AngleEstimator::AngleEstimator(ImuSensor* imuSensor) : _counter(0), _integral(0.f), _average_acceleration_y_axis(0.f), _average_acceleration_z_axis(0.f),
 _average_rotation_x_axis(0.f), _corrected_angle_x(0.f), _corrected_rotation_x(0.f), _imuSensor(imuSensor), _flashStorage(FlashStorage::instance())
 {
-     _buzzer.beep_ms(200);
+     _buzzer.beep_ms(20, 1);
 }
 
 void AngleEstimator::load_balance_points_from_flash()
@@ -55,9 +55,9 @@ void AngleEstimator::update_angles(float delta_time_seconds)
 
 void AngleEstimator::calibrate_balance_point()
 {
-    _buzzer.beep_ms(40);
+    _buzzer.beep_ms(40, 1);
     vTaskDelay(pdMS_TO_TICKS(10000));
-    _buzzer.beep_ms(200);
+    _buzzer.beep_ms(200, 1);
     mpu6050_acceleration_t accel;
     mpu6050_rotation_t rotation;
     float total_acceleration_y_axis = 0.f;
@@ -74,11 +74,11 @@ void AngleEstimator::calibrate_balance_point()
     _average_acceleration_y_axis = total_acceleration_y_axis / 1000.f;
     _average_acceleration_z_axis = total_acceleration_z_axis / 1000.f;
     _average_rotation_x_axis = total_rotation_x_axis / 1000.f;
-    _buzzer.beep_ms(500);
+    _buzzer.beep_ms(500, 1);
     _flashStorage.save_to_flash("acceleration_y", _average_acceleration_y_axis);
     _flashStorage.save_to_flash("acceleration_z", _average_acceleration_z_axis);
     _flashStorage.save_to_flash("rotation_x", _average_rotation_x_axis);
     vTaskDelay(pdMS_TO_TICKS(5000));
-    _buzzer.beep_ms(100);
+    _buzzer.beep_ms(100, 2);
     vTaskDelay(pdMS_TO_TICKS(2000));
 }

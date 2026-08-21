@@ -4,6 +4,7 @@
 #include "pwm-controller.h"
 #include "button.h"
 #include "angle-estimator.h"
+#include "led.h"
 class Robot
 {
     public:
@@ -24,13 +25,13 @@ class Robot
     void choose_direction();
     void nullifier(float*, float*, float*);
     
-    void brake(float);
-
+    
     private:
-
+    
     void set_motor_pwm(Motor&, float);
     void PID(float, float, float);
     static void auto_calibrate(void*);
+    void brake(float, const int64_t*);
 
     PwmController _pwmController;
     Motor _motor1;
@@ -41,6 +42,7 @@ class Robot
     float _output;
     float _previous_error;
     float _integral;
+    float _braking_integral;
     int64_t _time_now;
     int64_t _previous_time;
     int64_t _previous_time_calibrate_task;
@@ -51,9 +53,10 @@ class Robot
     Robot::DIRECTION _direction;
     bool _is_being_controlled;
     bool _is_braking;
-    bool _skip_auto_calibrate;
+    bool _brake_timer_set;
     int _previous_pulses;
-    
+    Buzzer _buzzer;
+    Led _led;
   
 
 };
