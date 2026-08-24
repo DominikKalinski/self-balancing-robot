@@ -17,7 +17,6 @@ class Robot
     Robot();
     void imu_sensor_init();
     void button_init();
-    void start_rpm_task();
     void start_auto_calibration_task();
     void load_balance_point_from_flash();
     void balance();
@@ -31,7 +30,7 @@ class Robot
     void set_motor_pwm(Motor&, float);
     void PID(float, float, float);
     static void auto_calibrate(void*);
-    void brake(float, const int64_t*);
+    float brake(float);
 
     PwmController _pwmController;
     Motor _motor1;

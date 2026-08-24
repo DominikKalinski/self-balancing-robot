@@ -13,17 +13,19 @@ class Motor
         FORWARD,
         REVERSE
     };
+  
     Motor(uint8_t, uint8_t, uint8_t, uint8_t, PwmController::CHANNEL);
     void set_dir(Motor::DIRECTION);
     void switch_dir();
+    Motor::DIRECTION direction();
     void set_pwm(float pwm);
+    float pulses_per_second();
     uint8_t pwm_pin();
     PcntController& pcntController();
     float rpm() const;
     int64_t& previous_time_us();
     int encoder_a_pin() const;
-    void start_rpm_task();
-    static void update_rpm(void*);
+    void store_timestamps_for_rotation_speed(int64_t, DIRECTION);
     
     private:
     PwmController _pwmController;
@@ -35,9 +37,11 @@ class Motor
     std::atomic<float> _rpm;
     PwmController::CHANNEL _channel;
     PcntController _pcntController;
-    int64_t _previous_time;
+    int64_t _timestamp1;
+    int64_t _timestamp2;
+    bool _write_to_timestamp1;
     uint8_t _motor_number;
-    int _previous_pulses;
     static uint8_t _motor_count;
+    DIRECTION _direction;
 };
 

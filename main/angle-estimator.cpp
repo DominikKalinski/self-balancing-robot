@@ -18,10 +18,9 @@ void AngleEstimator::load_balance_points_from_flash()
 float AngleEstimator::PID(float P, float I, float D, float delta_time_seconds, float angle_goal, float angle_goal_braking_offset)
 {
     update_angles(delta_time_seconds);
-    angle_goal = std::clamp(angle_goal, -1.f, 1.f);
+    angle_goal = std::clamp(angle_goal, -3.f, 3.f);
     float error = _corrected_angle_x + angle_goal + angle_goal_braking_offset;
     float rotation = _corrected_rotation_x;
-
     float output = (P * error) + (I * (_integral += error * delta_time_seconds)) + (D * rotation);
     if(output < 3.f && output > 0.f)
     {

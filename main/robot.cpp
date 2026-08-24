@@ -5,6 +5,7 @@
 #include "driver/gpio.h"
 
 #define PULSES_PER_REVOLUTION 3200
+constexpr float MAX_PULSES_PER_SECOND = 10666.f;
 
 Robot::Robot() : 
         _motor1(CONFIG_MOTOR1_DIR_GPIO, 
@@ -34,11 +35,7 @@ void Robot::button_init()
     _button.isr_init();
 }
 
-void Robot::start_rpm_task()
-{
-    _motor1.start_rpm_task();
-    _motor2.start_rpm_task();
-}
+
 
 void Robot::start_auto_calibration_task()
 {
@@ -141,18 +138,20 @@ void Robot::auto_calibrate(void* arg)
     Robot* robot = static_cast<Robot*>(arg);
     while(true)
     {
-        if(robot->_is_braking) { robot->_led.set_color(120, 0, 0); }
-        else {robot->_led.set_color(0, 120, 0);}
+        if(robot->_is_braking) { robot->_led.set_color(20, 0, 0); }
+        else {robot->_led.set_color(0, 20, 0);}
         int64_t time_now = esp_timer_get_time();
-        int current_pulses = robot->_motor1.pcntController().pulses();
         float delta_time_seconds = (time_now - robot->_previous_time_calibrate_task) / 1000000.f;
         robot->_previous_time_calibrate_task = time_now;
-        float pulses_per_second = (current_pulses - robot->_previous_pulses) / delta_time_seconds;
-        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(pulses_per_second) || robot->_is_braking)
-        {
-            if(std::abs(pulses_per_second) > 2000.f){robot->_is_braking = true; }
 
-            if(robot->_is_braking) { robot->brake(pulses_per_second, &time_now); }
+        int current_pulses = robot->_motor1.pcntController().pulses();
+        float pulses_per_second = robot->_motor1.pulses_per_second();
+         {printf("PPS: %f\n", pulses_per_second); robot->_counter = 0;}
+        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(pulses_per_second))
+        {
+            if(std::abs(pulses_per_second) > 2000.f){ pulses_per_second = robot->brake(pulses_per_second); }
+            
+            
             
             robot->_previous_pulses_per_second = pulses_per_second;
 
@@ -160,7 +159,6 @@ void Robot::auto_calibrate(void* arg)
             vTaskDelay(pdMS_TO_TICKS(25));
             continue;
         }
-        if(robot->_counter++ > 20) {printf("Delta time: %f\n\n", delta_time_seconds); robot->_counter = 0; } 
         
         if(!robot->_is_braking) {robot->_angle_goal += pulses_per_second * 0.00001f;}
       
@@ -170,28 +168,62 @@ void Robot::auto_calibrate(void* arg)
     }
 }
 
-void Robot::brake(float pulses_per_second, const int64_t* time_now)
+float Robot::brake(float initial_pulses_per_second)
 {
-    static float time_start_seconds = 0.f;
-    float time_now_seconds = *time_now / 1000000.f;
-    if(!_brake_timer_set)
+    int speed_goal = 0;
+    float current_pulses = _motor1.pcntController().pulses();
+    float previous_pulses = current_pulses;
+    float pulses_per_second = initial_pulses_per_second;
+    float speed_P = 4 / MAX_PULSES_PER_SECOND;
+    float angle_rate_limit = 1.f;
+    float delta_time_seconds = 0.025f; //same as vTaskDelay in this function
+    int64_t time_now = esp_timer_get_time();
+    float previous_time_seconds = time_now / 1000000.f;
+    _led.set_color(50, 0, 0);
+    while(true)
     {
-        time_start_seconds = *time_now / 1000000.f;
-        _brake_timer_set = true;
+        
+        int speed_error = speed_goal + pulses_per_second;
+        float desired_angle =  speed_P * speed_error;
+        float max_change = angle_rate_limit * delta_time_seconds;
+        
+        if(desired_angle > _angle_goal_braking_offset)
+        {
+            _angle_goal_braking_offset += std::min(desired_angle - _angle_goal_braking_offset, max_change);
+        }
+        else if (desired_angle < _angle_goal_braking_offset)
+        {
+            _angle_goal_braking_offset -= std::min(_angle_goal_braking_offset - desired_angle, max_change);
+        }
+
+        if(initial_pulses_per_second > 0.f)
+        {
+            if(desired_angle < 0.1f && _angle_goal_braking_offset < 0.1f) 
+            {
+                _angle_goal_braking_offset = 0.f;
+                _led.set_color(0, 50, 0);
+                return pulses_per_second;
+            }
+        }
+        else
+        {
+            if(desired_angle > -0.1f && _angle_goal_braking_offset > -0.1f) 
+            {
+                _angle_goal_braking_offset = 0.f;
+                _led.set_color(0, 50, 0);
+                return pulses_per_second;
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(25));
+        time_now = esp_timer_get_time();
+        float time_now_seconds = time_now / 1000000.f;
+        delta_time_seconds = time_now_seconds - previous_time_seconds;
+        previous_time_seconds = time_now_seconds;
+        int current_pulses = _motor1.pcntController().pulses();
+        pulses_per_second = (current_pulses - previous_pulses) / delta_time_seconds;
+        previous_pulses = current_pulses;
+        
     }
-    float speed_factor = std::abs(pulses_per_second / 10666.f);
-    if(pulses_per_second < 0.f)
-    {
-        _angle_goal_braking_offset = (powf(speed_factor, 2.7f)) * 4.f * -1.f;
-    }
-    else
-    {
-        _angle_goal_braking_offset = powf(speed_factor, 2.7f) * 4.f;
-    }
-    if(std::abs(pulses_per_second) < 1000 || (time_now_seconds - time_start_seconds) > 2.f) 
-    {
-        _is_braking = false;
-        _angle_goal_braking_offset = 0.f;
-        _brake_timer_set = false;
-    }
+
+    return 0.f;
 }
