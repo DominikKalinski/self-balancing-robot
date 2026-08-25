@@ -21,6 +21,12 @@ _channel_B(nullptr), _motor(motor)
     // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, 30000));
     // ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, -30000));
 
+    pcnt_glitch_filter_config_t filter_config = {
+    .max_glitch_ns = 1000,
+};
+
+ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(_pcnt_unit, &filter_config));
+
     pcnt_chan_config_t channel_config1 = {};
     channel_config1.edge_gpio_num = _pinA;
     channel_config1.level_gpio_num = _pinB;
@@ -70,8 +76,8 @@ ESP_ERROR_CHECK(pcnt_channel_set_level_action(_channel_A, PCNT_CHANNEL_LEVEL_ACT
     ESP_ERROR_CHECK(pcnt_unit_clear_count(_pcnt_unit));
     ESP_ERROR_CHECK(pcnt_unit_start(_pcnt_unit));
 
-    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, 32));
-    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, -32));
+    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, 4));
+    ESP_ERROR_CHECK(pcnt_unit_add_watch_point(_pcnt_unit, -4));
 
     pcnt_event_callbacks_t callbacks = {
     .on_reach = pcnt_callback
@@ -84,11 +90,11 @@ bool PcntController::pcnt_callback(pcnt_unit_handle_t unit, const pcnt_watch_eve
 {
     int64_t time_now = esp_timer_get_time();
     PcntController* controller = static_cast<PcntController*>(user_ctx);
-    if(edata->watch_point_value == 32)
+    if(edata->watch_point_value == 4)
     {
         controller->_motor->store_timestamps_for_rotation_speed(time_now, Motor::DIRECTION::FORWARD);
     }
-    if(edata->watch_point_value == -32)
+    if(edata->watch_point_value == -4)
     {
         controller->_motor->store_timestamps_for_rotation_speed(time_now, Motor::DIRECTION::REVERSE);
     }

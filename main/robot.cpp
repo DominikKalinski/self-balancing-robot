@@ -138,33 +138,33 @@ void Robot::auto_calibrate(void* arg)
     Robot* robot = static_cast<Robot*>(arg);
     while(true)
     {
-        if(robot->_is_braking) { robot->_led.set_color(20, 0, 0); }
-        else {robot->_led.set_color(0, 20, 0);}
         int64_t time_now = esp_timer_get_time();
         float delta_time_seconds = (time_now - robot->_previous_time_calibrate_task) / 1000000.f;
         robot->_previous_time_calibrate_task = time_now;
 
         int current_pulses = robot->_motor1.pcntController().pulses();
         float pulses_per_second = robot->_motor1.pulses_per_second();
-         {printf("PPS: %f\n", pulses_per_second); robot->_counter = 0;}
-        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(pulses_per_second))
+        
+        
+        // if(std::abs(pulses_per_second) > 2000.f)
+        // { 
+        //     pulses_per_second = robot->brake(pulses_per_second); 
+        // }
+        //if(robot->_counter++ > 5) {printf("PPS: %f\n", pulses_per_second); robot->_counter = 0;}
+        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(pulses_per_second) + 8.f)
         {
-            if(std::abs(pulses_per_second) > 2000.f){ pulses_per_second = robot->brake(pulses_per_second); }
-            
-            
-            
-            robot->_previous_pulses_per_second = pulses_per_second;
-
+            robot->_previous_pulses_per_second = pulses_per_second; 
             robot->_previous_pulses = current_pulses;
-            vTaskDelay(pdMS_TO_TICKS(25));
+            vTaskDelay(pdMS_TO_TICKS(50));
+            robot->_led.set_color(0, 0, 30);
             continue;
         }
-        
-        if(!robot->_is_braking) {robot->_angle_goal += pulses_per_second * 0.00001f;}
+        robot->_led.set_color(30, 0, 0);
+        robot->_angle_goal += pulses_per_second * 0.000001f * delta_time_seconds;
       
-        robot->_previous_pulses = current_pulses;
+        
         robot->_previous_pulses_per_second = pulses_per_second;
-        vTaskDelay(pdMS_TO_TICKS(25));
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -176,7 +176,7 @@ float Robot::brake(float initial_pulses_per_second)
     float pulses_per_second = initial_pulses_per_second;
     float speed_P = 4 / MAX_PULSES_PER_SECOND;
     float angle_rate_limit = 1.f;
-    float delta_time_seconds = 0.025f; //same as vTaskDelay in this function
+    float delta_time_seconds = 0.005f; //same as vTaskDelay in this function
     int64_t time_now = esp_timer_get_time();
     float previous_time_seconds = time_now / 1000000.f;
     _led.set_color(50, 0, 0);
@@ -196,12 +196,12 @@ float Robot::brake(float initial_pulses_per_second)
             _angle_goal_braking_offset -= std::min(_angle_goal_braking_offset - desired_angle, max_change);
         }
 
-        if(initial_pulses_per_second > 0.f)
+        if(initial_pulses_per_second < 0.f)
         {
             if(desired_angle < 0.1f && _angle_goal_braking_offset < 0.1f) 
             {
                 _angle_goal_braking_offset = 0.f;
-                _led.set_color(0, 50, 0);
+                //_led.set_color(0, 50, 0);
                 return pulses_per_second;
             }
         }
@@ -210,11 +210,11 @@ float Robot::brake(float initial_pulses_per_second)
             if(desired_angle > -0.1f && _angle_goal_braking_offset > -0.1f) 
             {
                 _angle_goal_braking_offset = 0.f;
-                _led.set_color(0, 50, 0);
+                //_led.set_color(0, 50, 0);
                 return pulses_per_second;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(25));
+        vTaskDelay(pdMS_TO_TICKS(5));
         time_now = esp_timer_get_time();
         float time_now_seconds = time_now / 1000000.f;
         delta_time_seconds = time_now_seconds - previous_time_seconds;

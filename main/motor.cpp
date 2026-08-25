@@ -1,13 +1,14 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <esp_timer.h>
+#include <cmath>
 #include "motor.h"
 #include "driver/gpio.h"
 #include "gpio-controller.h"
 #include "pcnt-controller.h"
 
 uint8_t Motor::_motor_count = 0;
-constexpr uint8_t PULSE_RESET_COUNT = 32;
+constexpr uint8_t PULSE_RESET_COUNT = 4;
 
 Motor::Motor(uint8_t dir_pin, uint8_t pwm_pin, uint8_t encoder_A_pin, uint8_t encoder_B_pin, PwmController::CHANNEL channel) : 
 _forward(true), _dir_pin(dir_pin), _pwm_pin(pwm_pin), _encoder_A_pin(encoder_A_pin), _encoder_B_pin(encoder_B_pin), 
@@ -97,6 +98,15 @@ float Motor::pulses_per_second()
     if(direction_temp == Motor::DIRECTION::FORWARD)
     {
         pulses_per_second *= -1.f;
+    }
+
+    if (std::fabsf(pulses_per_second) > 8000.f)
+    {
+        printf("t1=%lld\n t2=%lld\n flag=%d\n dt=%lld\n\n",
+               timestamp1_temp,
+               timestamp2_temp,
+               write_to_timestamp1_temp,
+               (long long)(delta_time_seconds * 1000000.f));
     }
     
     return pulses_per_second;
