@@ -26,11 +26,36 @@ How to use:
 **Calibration is done by pressing the yellow button on the perfboard, once pressed a interrupt changes a flag which then enters the robot in calibration mode. The calibration starts with a 40 ms buzzer beep followed by 10 seconds delay so you have time to find the balance point then another buzzer beep, this time 200ms beeps and then the calibration have started, hold the balance point until you hear another longer beep after approximately 10 seconds (500ms). Now there will be a 7 seconds delay with a 100 ms beep in between, after that the balancing and powering the motors starts again.
 
 How it works:
+* At startup robot loads saved calibration values from flash memory that the user has set by calibrating it.
 * The robot uses a MPU6050 (IMU) sensor which is a 6 axis sensor. 6 axis means that it measures 3 axis with an accelerometer and 3 axis with a gyroscope (xyz).
   The accelerometer measures force on each axis. The Z axis is pointing down which means that when laying flat the ideal measurement is 1 (1G). The Y axis measures 0 when laying flat. When tilting the
   Y axis thing starts exerting force on the accelerometer and the value increases/decreases depending on direction. By the correlation between the increasing/decreasing value of Y axis and
   increasing/decreasing value of Z we can calculate the angle.
-* Angle from accelerometer is not precise because there is other forces that will affect the accelerometer for example robot acceleration, robot movement etc. Thats why we need the gyroscope for a more     precise measurement. The two problems with gyroscope is that it have no idea where it is, how much it tilts and it drifts because of noise because we need to increment the angle instead of setting it     each iteration. How do we then know what angle we are in? By using the accelerometer angle we correct the gyroscope but still using most of the angle reading from the more accurate gyroscope. This is     called a complementary filter and for this robot it is 2% accelerometer and 98% gyroscope which turned out to work just fine.
+* Angle from accelerometer is not precise because there is other forces that will affect the accelerometer for example robot acceleration, robot movement etc. Thats why we need the gyroscope which          measures angle change per second (speed) for a more     precise measurement. The two problems with gyroscope is that it have no idea where it is, how much it tilts and it drifts because of noise          because we need to increment the angle instead of setting it     each iteration. How do we then know what angle we are in? By using the accelerometer angle we correct the gyroscope but still using most   of the angle reading from the more accurate gyroscope. This is     called a complementary filter and for this robot it is 2% accelerometer and 98% gyroscope which turned out to work just fine.
+* PI(D) formula is used (Proportional, Integral and Derivative). Proportional means that it increases output linearly with angle error which is then multiplied by a constant. Integral means it              accumulates as long as the error persists (also multiplied by a constant), and Derivative is the faster the angle changes the higher output its giving (also multiplied by constant). By lengthy            calibration I decided to not use D at all, as it made the robot oscillate aggressively.
+* The robot self-calibrates by changing target angle depending on motor speed.
+* Motor speed is derived from its own encoders, on each revolution the motor sends out 32 pulses through 2 signal cables. Depending which signal comes first we can know the direction and the built in       hardware pulse counter (PCNT) will either increment or decrement. By counting both rising and falling edges we get a total of 64 signals per revolution. Every 4 counts a interrupt is triggered which      stores timestamps for the count of 4 rising and falling edges. Another part of the program is then reading those timestamps and calculating the speed. The reading of the timestamps is in a critical
+  section which means all interrupts are blocked for the time of the reading. The reason is that another interrupt may trigger exactly between the reading of those two timestamps which would corrupt the    motor speed calculation.
+* The self-calibration have its own task and I use std::atomic to prevent race conditions because the main task shares variables with the task. (there should not be a possibility for race condition as      the shared variables are floats and floats are 32 bit variables and ESP32c6 have a single core 32 bit processor which means it changes a 32 bit variable in 1 cycle, but I think its good practice anyway)
+* If robot exceeds a certain speed it enters braking mode where it tilts aggressively until almost at standstill.
+* The buzzer is non-blocking by starting a task for the duration of the buzz.
+
+
+Challenges:
+* I got obviously false pulse readings from one of the motor encoders. The pulse count could go up to absurd high numbers. This was solved by running a few tests on GPIOs and concluding that that           specific GPIO was damaged and didnt pass all the tests. Switching to another GPIO solved the problem.
+* Problems with aggressive oscillating robot. Tuning the PID formula solved it. (many trial and errors)
+* Problems with robot not correcting fast enough, solved by measuring deadzone on motors and never allow for output to go below deadzone.
+* Choosing between measuring motor speed over delta time or measuring time between pulses using PCNT and interrupts (the first one less precise, the second more precise but more noisy or jittery)
+* Encountering strange errors, one was for example that I assigned a too small stack size for a task.
+
+
+AI usage:
+* Discussion partner
+* Debugging
+* Code examples (for example interrupt or PCNT)
+  My taughts about AI:
+  I try to avoid using AI as much as possible as it impedes my learning process. I enjoy coding and problem solving and the reward is much higher if I find the solution myself. To save time I have at many times used AI to debug, it does not feel good, but I always, without exception, make sure to understand what the problem was and how it was solved.
+  The whole codebase is written by me, 0 AI generation(except examples). This readme is not AI-assisted or generated.
 
 
 ## Classes:
