@@ -136,6 +136,7 @@ void Robot::set_motor_pwm(Motor& motor, float percentage)
 void Robot::auto_calibrate(void* arg)
 {
     Robot* robot = static_cast<Robot*>(arg);
+    const float angle_adjust_constant = 0.00004f;
     while(true)
     {
         int64_t time_now = esp_timer_get_time();
@@ -144,46 +145,49 @@ void Robot::auto_calibrate(void* arg)
 
         int current_pulses = robot->_motor1.pcntController().pulses();
         float pulses_per_second = robot->_motor1.pulses_per_second();
+        float filtered_pulses_per_second = (pulses_per_second * 0.05f) + (robot->_previous_pulses_per_second * 0.95f);
         
+        if(std::abs(pulses_per_second) > 2000.f)
+        { 
+            robot->speed_target(0); 
+        }
         
-        // if(std::abs(pulses_per_second) > 2000.f)
-        // { 
-        //     pulses_per_second = robot->brake(pulses_per_second); 
-        // }
-        //if(robot->_counter++ > 5) {printf("PPS: %f\n", pulses_per_second); robot->_counter = 0;}
-        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(pulses_per_second) + 8.f)
+        if(std::abs(robot->_previous_pulses_per_second) >= std::abs(filtered_pulses_per_second))
         {
-            robot->_previous_pulses_per_second = pulses_per_second; 
+            robot->_previous_pulses_per_second = filtered_pulses_per_second; 
             robot->_previous_pulses = current_pulses;
-            vTaskDelay(pdMS_TO_TICKS(50));
-            robot->_led.set_color(0, 0, 30);
+            vTaskDelay(pdMS_TO_TICKS(25));
+            //robot->_led.set_color(0, 0, 30);
             continue;
         }
-        robot->_led.set_color(30, 0, 0);
-        robot->_angle_goal += pulses_per_second * 0.000001f * delta_time_seconds;
+        if(std::abs(pulses_per_second) > 500)
+        {
+            //robot->_led.set_color(30, 0, 0);
+            robot->_angle_goal += pulses_per_second * angle_adjust_constant * delta_time_seconds;
+        }
       
         
         robot->_previous_pulses_per_second = pulses_per_second;
-        vTaskDelay(pdMS_TO_TICKS(50));
+        vTaskDelay(pdMS_TO_TICKS(25));
     }
 }
 
-float Robot::brake(float initial_pulses_per_second)
+void Robot::speed_target(int speed_target)
 {
     int speed_goal = 0;
     float current_pulses = _motor1.pcntController().pulses();
     float previous_pulses = current_pulses;
-    float pulses_per_second = initial_pulses_per_second;
-    float speed_P = 4 / MAX_PULSES_PER_SECOND;
+    float pulses_per_second = _motor1.pulses_per_second();
+    float initial_pulses_per_second = pulses_per_second;
+    float speed_P = 4 / MAX_PULSES_PER_SECOND; //   1 / max_pulses_per_second gives 1 when motor is at full speed
     float angle_rate_limit = 1.f;
     float delta_time_seconds = 0.005f; //same as vTaskDelay in this function
     int64_t time_now = esp_timer_get_time();
     float previous_time_seconds = time_now / 1000000.f;
-    _led.set_color(50, 0, 0);
+    _led.set_color(254, 0, 0);
     while(true)
     {
-        
-        int speed_error = speed_goal + pulses_per_second;
+        int speed_error = speed_target + pulses_per_second;
         float desired_angle =  speed_P * speed_error;
         float max_change = angle_rate_limit * delta_time_seconds;
         
@@ -196,34 +200,20 @@ float Robot::brake(float initial_pulses_per_second)
             _angle_goal_braking_offset -= std::min(_angle_goal_braking_offset - desired_angle, max_change);
         }
 
-        if(initial_pulses_per_second < 0.f)
-        {
-            if(desired_angle < 0.1f && _angle_goal_braking_offset < 0.1f) 
-            {
-                _angle_goal_braking_offset = 0.f;
-                //_led.set_color(0, 50, 0);
-                return pulses_per_second;
-            }
-        }
-        else
-        {
-            if(desired_angle > -0.1f && _angle_goal_braking_offset > -0.1f) 
-            {
-                _angle_goal_braking_offset = 0.f;
-                //_led.set_color(0, 50, 0);
-                return pulses_per_second;
-            }
-        }
+       if(std::abs(pulses_per_second) < speed_target + 300) 
+       {
+            _led.set_color(0, 0, 20);
+            _angle_goal_braking_offset = 0.f;
+            return;
+       }
         vTaskDelay(pdMS_TO_TICKS(5));
         time_now = esp_timer_get_time();
         float time_now_seconds = time_now / 1000000.f;
         delta_time_seconds = time_now_seconds - previous_time_seconds;
         previous_time_seconds = time_now_seconds;
         int current_pulses = _motor1.pcntController().pulses();
-        pulses_per_second = (current_pulses - previous_pulses) / delta_time_seconds;
+        pulses_per_second = _motor1.pulses_per_second();
         previous_pulses = current_pulses;
         
     }
-
-    return 0.f;
 }

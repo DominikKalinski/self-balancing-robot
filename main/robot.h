@@ -30,7 +30,7 @@ class Robot
     void set_motor_pwm(Motor&, float);
     void PID(float, float, float);
     static void auto_calibrate(void*);
-    float brake(float);
+    void speed_target(int);
 
     PwmController _pwmController;
     Motor _motor1;

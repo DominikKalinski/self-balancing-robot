@@ -71,7 +71,7 @@ float Motor::pulses_per_second()
     float delta_time_seconds = 0.f;
     
     static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
-    portENTER_CRITICAL(&mux);
+    portENTER_CRITICAL(&mux); //critical section where interrupts are blocked to make sure we get uncorrupted reads
     int64_t timestamp1_temp = _timestamp1;
     int64_t timestamp2_temp = _timestamp2;
     bool write_to_timestamp1_temp = _write_to_timestamp1;
@@ -100,14 +100,7 @@ float Motor::pulses_per_second()
         pulses_per_second *= -1.f;
     }
 
-    if (std::fabsf(pulses_per_second) > 8000.f)
-    {
-        printf("t1=%lld\n t2=%lld\n flag=%d\n dt=%lld\n\n",
-               timestamp1_temp,
-               timestamp2_temp,
-               write_to_timestamp1_temp,
-               (long long)(delta_time_seconds * 1000000.f));
-    }
+   
     
     return pulses_per_second;
 }
