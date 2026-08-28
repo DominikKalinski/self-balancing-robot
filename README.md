@@ -1,4 +1,5 @@
 # Self balancing robot
+<img width="2048" height="1536" alt="image" src="https://github.com/user-attachments/assets/04780936-6189-4543-8727-90c1e1994af1" />
 
 
 ## Classes:
