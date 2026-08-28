@@ -17,6 +17,15 @@ Components:
 * 1 LIPO 12V 7300 mAh battery (overkill)
 * 3d-printed body (3 parts)
 
+How to use:
+* Place the robot on a flat surface as leveled as possible
+* Switch the electrical switch (top left if battery XT60 connector is on the left)
+* Check if robot is balancing well, if it drifts too much from the start then calibrate it**
+* Enjoy
+
+**Calibration is done by pressing the yellow button on the perfboard, once pressed a interrupt changes a flag which then enters the robot in calibration mode. The calibration starts with a 40 ms buzzer beep followed by 10 seconds delay so you have time to find the balance point then another buzzer beep, this time 200ms beeps and then the calibration have started, hold the balance point until you hear another longer beep after approximately 10 seconds (500ms). Now there will be a 7 seconds delay with a 100 ms beep in between, after that the balancing and powering the motors starts again.
+
+
 
 
 ## Classes:
