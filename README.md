@@ -16,6 +16,7 @@ Components:
 * 4 WAGO-lever 5 point connectors
 * 1 LIPO 12V 7300 mAh battery (overkill)
 * 3d-printed body (3 parts)
+* Step up/step down regulator to 5V
 
 How to use:
 * Place the robot on a flat surface as leveled as possible
@@ -36,6 +37,7 @@ How it works:
 * The robot self-calibrates by changing target angle depending on motor speed.
 * Motor speed is derived from its own encoders, on each revolution the motor sends out 32 pulses through 2 signal cables. Depending which signal comes first we can know the direction and the built in       hardware pulse counter (PCNT) will either increment or decrement. By counting both rising and falling edges we get a total of 64 signals per revolution. Every 4 counts a interrupt is triggered which      stores timestamps for the count of 4 rising and falling edges. Another part of the program is then reading those timestamps and calculating the speed. The reading of the timestamps is in a critical
   section which means all interrupts are blocked for the time of the reading. The reason is that another interrupt may trigger exactly between the reading of those two timestamps which would corrupt the    motor speed calculation.
+* The encoders are powered by 5V from the step down regulator. I have used the voltage divider formula to choose correct resistors to drop the voltage down to 3.3V (10k ohm and 20k ohm)
 * The self-calibration have its own task and I use std::atomic to prevent race conditions because the main task shares variables with the task. (there should not be a possibility for race condition as      the shared variables are floats and floats are 32 bit variables and ESP32c6 have a single core 32 bit processor which means it changes a 32 bit variable in 1 cycle, but I think its good practice anyway)
 * If robot exceeds a certain speed it enters braking mode where it tilts aggressively until almost at standstill.
 * The buzzer is non-blocking by starting a task for the duration of the buzz.
@@ -49,13 +51,6 @@ Challenges:
 * Encountering strange errors, one was for example that I assigned a too small stack size for a task.
 
 
-AI usage:
-* Discussion partner
-* Debugging
-* Code examples (for example interrupt or PCNT)
-  My taughts about AI:
-  I try to avoid using AI as much as possible as it impedes my learning process. I enjoy coding and problem solving and the reward is much higher if I find the solution myself. To save time I have at many times used AI to debug, it does not feel good, but I always, without exception, make sure to understand what the problem was and how it was solved.
-  The whole codebase is written by me, 0 AI generation(except examples). This readme is not AI-assisted or generated.
 
 
 ## Classes:
