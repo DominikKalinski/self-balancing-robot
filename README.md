@@ -25,7 +25,12 @@ How to use:
 
 **Calibration is done by pressing the yellow button on the perfboard, once pressed a interrupt changes a flag which then enters the robot in calibration mode. The calibration starts with a 40 ms buzzer beep followed by 10 seconds delay so you have time to find the balance point then another buzzer beep, this time 200ms beeps and then the calibration have started, hold the balance point until you hear another longer beep after approximately 10 seconds (500ms). Now there will be a 7 seconds delay with a 100 ms beep in between, after that the balancing and powering the motors starts again.
 
-
+How it works:
+* The robot uses a MPU6050 (IMU) sensor which is a 6 axis sensor. 6 axis means that it measures 3 axis with an accelerometer and 3 axis with a gyroscope (xyz).
+  The accelerometer measures force on each axis. The Z axis is pointing down which means that when laying flat the ideal measurement is 1 (1G). The Y axis measures 0 when laying flat. When tilting the
+  Y axis thing starts exerting force on the accelerometer and the value increases/decreases depending on direction. By the correlation between the increasing/decreasing value of Y axis and
+  increasing/decreasing value of Z we can calculate the angle.
+* Angle from accelerometer is not precise because there is other forces that will affect the accelerometer for example robot acceleration, robot movement etc. Thats why we need the gyroscope for a more     precise measurement. The two problems with gyroscope is that it have no idea where it is, how much it tilts and it drifts because of noise because we need to increment the angle instead of setting it     each iteration. How do we then know what angle we are in? By using the accelerometer angle we correct the gyroscope but still using most of the angle reading from the more accurate gyroscope. This is     called a complementary filter and for this robot it is 2% accelerometer and 98% gyroscope which turned out to work just fine.
 
 
 ## Classes:
