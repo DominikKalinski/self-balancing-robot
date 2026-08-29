@@ -15,7 +15,7 @@ Components:
 * Multiple resistors (explained further down)
 * 4 WAGO-lever 5 point connectors
 * 1 LIPO 12V 7300 mAh battery (overkill)
-* 3d-printed body (3 parts)
+* 3d-printed body (4 parts)
 * Step up/step down regulator to 5V
 
 How to use:
