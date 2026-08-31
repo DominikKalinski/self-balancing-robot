@@ -8,6 +8,9 @@ If you need to know how to set it up, follow this guide: https://docs.espressif.
 Schematics and a small summarize for progress with pictures:
 https://dominikkalinski.github.io/self-balancing-robot/
 
+Short video of robot balancing:
+https://youtube.com/shorts/zPwW3MlvR2M?feature=share
+
 Components:
 * 2 Motors 12V gear ratio 50:1 max 10000 rpm (or 200 on the shaft)
 * 2 Motor drivers for controlling direction and pwm
