@@ -5,13 +5,13 @@ To build and flash use the command idf.py build flash
 
 If you need to know how to set it up, follow this guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html
 
-Schematics and a small summarize for progress with pictures:
+## Schematics and a small summarize for progress with pictures:
 https://dominikkalinski.github.io/self-balancing-robot/
 
-Short video of robot balancing:
+## Short video of robot balancing:
 https://youtube.com/shorts/zPwW3MlvR2M?feature=share
 
-Components:
+## Components:
 * 2 Motors 12V gear ratio 50:1 max 10000 rpm (or 200 on the shaft)
 * 2 Motor drivers for controlling direction and pwm
 * 1 ESP-32c6
@@ -24,7 +24,7 @@ Components:
 * 3d-printed body (4 parts)
 * Step up/step down regulator to 5V
 
-How to use:
+## How to use:
 * Place the robot on a flat surface as leveled as possible
 * Switch the electrical switch (top left if battery XT60 connector is on the left)
 * Check if robot is balancing well, if it drifts too much from the start then calibrate it**
@@ -32,7 +32,7 @@ How to use:
 
 **Calibration is done by pressing the yellow button on the perfboard, once pressed a interrupt changes a flag which then enters the robot in calibration mode. The calibration starts with a 40 ms buzzer beep followed by 10 seconds delay so you have time to find the balance point then another buzzer beep, this time 200ms beeps and then the calibration have started, hold the balance point until you hear another longer beep after approximately 10 seconds (500ms). Now there will be a 7 seconds delay with a 100 ms beep in between, after that the balancing and powering the motors starts again.
 
-How it works:
+## How it works:
 * At startup robot loads saved calibration values from flash memory that the user has set by calibrating it.
 * The robot uses a MPU6050 (IMU) sensor which is a 6 axis sensor. 6 axis means that it measures 3 axis with an accelerometer and 3 axis with a gyroscope (xyz).
   The accelerometer measures force on each axis. The Z axis is pointing down which means that when laying flat the ideal measurement is 1 (1G). The Y axis measures 0 when laying flat. When tilting the
@@ -49,7 +49,7 @@ How it works:
 * The buzzer is non-blocking by starting a task for the duration of the buzz.
 
 
-Challenges:
+## Challenges:
 * I got obviously false pulse readings from one of the motor encoders. The pulse count could go up to absurd high numbers. This was solved by running a few tests on GPIOs and concluding that that           specific GPIO was damaged and didnt pass all the tests. Switching to another GPIO solved the problem.
 * Problems with aggressive oscillating robot. Tuning the PID formula solved it. (many trial and errors)
 * Problems with robot not correcting fast enough, solved by measuring deadzone on motors and never allow for output to go below deadzone.
