@@ -5,6 +5,9 @@ To build and flash use the command idf.py build flash
 
 If you need to know how to set it up, follow this guide: https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/index.html
 
+Schematics and a small summarize for progress with pictures:
+https://dominikkalinski.github.io/self-balancing-robot/
+
 Components:
 * 2 Motors 12V gear ratio 50:1 max 10000 rpm (or 200 on the shaft)
 * 2 Motor drivers for controlling direction and pwm
